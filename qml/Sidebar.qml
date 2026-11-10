@@ -33,15 +33,31 @@ Rectangle {
             spacing: 10
 
             Rectangle {
-                width: 30; height: 30; radius: 9
-                color: Theme.accent
-                Icon { anchors.centerIn: parent; name: "check"; color: Theme.onAccent; strokeWidth: 2.6 }
+                width: 34; height: 34; radius: 10
+                color: Theme.primary
+                Text {
+                    anchors.centerIn: parent
+                    text: "AR"
+                    color: Theme.onPrimary
+                    font.pixelSize: 14
+                    font.weight: Font.Black
+                    font.letterSpacing: 0.5
+                }
             }
-            Text {
-                text: "Phosphorus"
-                color: Theme.text
-                font.pixelSize: 18
-                font.weight: Font.Bold
+            Column {
+                spacing: 1
+                Text {
+                    text: "AssignmentReminder"
+                    color: Theme.text
+                    font.pixelSize: 15
+                    font.weight: Font.Bold
+                }
+                Text {
+                    text: (store.total === 1 ? qsTr("1 assignment") : qsTr("%1 assignments").arg(store.total))
+                    color: Theme.textFaint
+                    font.pixelSize: 11
+                    font.weight: Font.Medium
+                }
             }
         }
 
@@ -100,6 +116,80 @@ Rectangle {
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                     onClicked: assignments.statusFilter = item.modelData.key
+                }
+            }
+        }
+
+        // Per-course breakdown
+        Text {
+            Layout.topMargin: 18
+            Layout.leftMargin: 12
+            Layout.bottomMargin: 4
+            visible: store.courseStats.length > 0
+            text: qsTr("COURSES")
+            color: Theme.textFaint
+            font.pixelSize: 11
+            font.weight: Font.Bold
+            font.letterSpacing: 1
+        }
+        Repeater {
+            model: store.courseStats.slice(0, 6)
+
+            Rectangle {
+                id: courseRow
+                required property var modelData
+                readonly property bool active: assignments.course.toLowerCase() === modelData.name.toLowerCase()
+
+                Layout.fillWidth: true
+                height: 44
+                radius: 12
+                color: active ? Theme.tint(Theme.primary, Theme.dark ? 0.09 : 0.14)
+                     : courseHover.containsMouse ? Theme.surfaceAlt : "transparent"
+                Behavior on color { ColorAnimation { duration: Theme.fast } }
+
+                Accessible.role: Accessible.Button
+                Accessible.name: modelData.name
+
+                Text {
+                    id: courseName
+                    x: 12; y: 8
+                    width: parent.width - 24 - courseCount.width - 8
+                    text: courseRow.modelData.name
+                    elide: Text.ElideRight
+                    color: courseRow.active ? Theme.text : Theme.textMuted
+                    font.pixelSize: 13
+                    font.weight: Font.Medium
+                }
+                Text {
+                    id: courseCount
+                    anchors.right: parent.right
+                    anchors.rightMargin: 12
+                    y: 9
+                    text: courseRow.modelData.done + "/" + courseRow.modelData.total
+                    color: Theme.textFaint
+                    font.pixelSize: 11
+                    font.weight: Font.DemiBold
+                }
+                Rectangle {
+                    x: 12
+                    anchors.bottom: parent.bottom
+                    anchors.bottomMargin: 8
+                    width: parent.width - 24
+                    height: 3; radius: 1.5
+                    color: Theme.border
+
+                    Rectangle {
+                        height: parent.height; radius: 1.5
+                        color: Theme.accent
+                        width: parent.width * courseRow.modelData.done / Math.max(1, courseRow.modelData.total)
+                    }
+                }
+                MouseArea {
+                    id: courseHover
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: assignments.course = courseRow.active ? "" : courseRow.modelData.name
                 }
             }
         }

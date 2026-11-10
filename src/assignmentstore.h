@@ -5,6 +5,7 @@
 #include <QString>
 #include <QStringList>
 #include <QTimer>
+#include <QVariantList>
 #include <QVariantMap>
 #include <QVector>
 
@@ -28,7 +29,12 @@ class AssignmentStore : public QAbstractListModel
     Q_PROPERTY(int weekCount READ weekCount NOTIFY statsChanged)
     Q_PROPERTY(int overdueCount READ overdueCount NOTIFY statsChanged)
     Q_PROPERTY(int doneCount READ doneCount NOTIFY statsChanged)
+    Q_PROPERTY(int highCount READ highCount NOTIFY statsChanged)
+    Q_PROPERTY(int todayCount READ todayCount NOTIFY statsChanged)
+    Q_PROPERTY(int oldestOverdueDays READ oldestOverdueDays NOTIFY statsChanged)
     Q_PROPERTY(QStringList courses READ courses NOTIFY statsChanged)
+    Q_PROPERTY(QVariantList courseStats READ courseStats NOTIFY statsChanged)
+    Q_PROPERTY(QVariantList weekDays READ weekDays NOTIFY statsChanged)
     Q_PROPERTY(bool canUndoRemove READ canUndoRemove NOTIFY canUndoRemoveChanged)
 
 public:
@@ -74,7 +80,12 @@ public:
     int weekCount() const;
     int overdueCount() const;
     int doneCount() const;
+    int highCount() const;           // unfinished, high priority
+    int todayCount() const;          // unfinished, due today
+    int oldestOverdueDays() const;   // 0 when nothing is overdue
     QStringList courses() const;
+    QVariantList courseStats() const;   // [{name, total, done}]
+    QVariantList weekDays() const;      // today + 6 days: [{iso, weekday, day, count, today}]
     bool canUndoRemove() const { return m_hasRemoved; }
 
     const Assignment &at(int row) const { return m_items.at(row); }

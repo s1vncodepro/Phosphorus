@@ -6,6 +6,7 @@ Item {
 
     property string label
     property string iconName
+    property string detail
     property int value: 0
     property color tone: Theme.accent
     property bool active: false
@@ -15,7 +16,7 @@ Item {
     property real shown: value
     Behavior on shown { NumberAnimation { duration: 350; easing.type: Easing.OutCubic } }
 
-    implicitHeight: 92
+    implicitHeight: 112
 
     Accessible.role: Accessible.Button
     Accessible.name: label + ": " + value
@@ -62,13 +63,31 @@ Item {
             font.weight: Font.Medium
         }
         Text {
-            x: 16
-            anchors.bottom: parent.bottom
-            anchors.bottomMargin: 12
+            x: 16; y: 34
             text: Math.round(card.shown)
             color: Theme.text
             font.pixelSize: 30
             font.weight: Font.Bold
+        }
+        Rectangle {
+            x: 16
+            anchors.bottom: detailText.top
+            anchors.bottomMargin: 7
+            width: parent.width - 32
+            height: 1
+            color: Theme.border
+        }
+        Text {
+            id: detailText
+            x: 16
+            width: parent.width - 32
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 10
+            text: card.detail
+            elide: Text.ElideRight
+            color: Theme.textFaint
+            font.pixelSize: 11
+            font.weight: Font.Medium
         }
         Rectangle {
             anchors.right: parent.right

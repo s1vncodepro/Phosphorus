@@ -1,9 +1,9 @@
-<title>Phosphorus</title>
+<title>AssignmentReminder</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap">
 <style>
-/* Layout: one phone-width column — header, four filter tiles, search, course chips,
-   then the list grouped by urgency. The add/edit form is a bottom sheet. */
+/* Layout: one phone-width column — header, four filter tiles, a seven-day strip, search,
+   course chips, then the list grouped by urgency. The add/edit form is a bottom sheet. */
 :root {
   /* Matte black: one committed dark look. Flat neutral surfaces, no gradients;
      colour only where it means something (status, done, progress). */
@@ -38,9 +38,10 @@ svg.i { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-widt
 .glow { box-shadow: var(--shadow), 0 0 0 1px color-mix(in srgb, var(--tone) calc(var(--glow) * 100%), transparent), 0 0 14px color-mix(in srgb, var(--tone) calc(var(--glow) * var(--g, 0.5) * 100%), transparent); }
 
 header { display: flex; align-items: center; gap: 12px; }
-header .mark { width: 34px; height: 34px; border-radius: 10px; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; }
+header .mark { width: 40px; height: 40px; border-radius: 12px; background: var(--primary); color: var(--on-primary); display: grid; place-items: center; font: 700 15px var(--display); letter-spacing: .04em; flex: none; }
+header .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--faint); margin: 0 0 2px; }
 header h1 { font: 700 26px/1.1 var(--display); letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
-header p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+header p.sub { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
 header .grow { flex: 1; min-width: 0; }
 .ring { position: relative; width: 46px; height: 46px; flex: none; }
 .ring svg { width: 46px; height: 46px; transform: rotate(-90deg); }
@@ -61,7 +62,19 @@ header .grow { flex: 1; min-width: 0; }
 .tile[aria-pressed="true"] { --g: 1; border-color: var(--tone); background: var(--surface-alt); }
 .tile .label { display: block; color: var(--muted); font-size: 13px; font-weight: 500; padding-right: 36px; }
 .tile .num { display: block; font: 700 28px/1.2 var(--display); font-variant-numeric: tabular-nums; margin-top: 6px; }
+.tile .detail { display: block; margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--border); color: var(--faint); font-size: 11px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tile .badge { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; color: var(--tone); background: color-mix(in srgb, var(--tone) 16%, transparent); }
+
+.week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); padding: 10px 6px; border-radius: 16px; background: var(--surface); border: 1px solid var(--border); }
+.day { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.day .wd { font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--faint); }
+.day .dn { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 14px; font-weight: 600; color: var(--muted); font-variant-numeric: tabular-nums; }
+.day.has .dn { color: var(--text); }
+.day.now .wd { color: var(--text); }
+.day.now .dn { background: var(--primary); color: var(--on-primary); }
+.day .dots { display: flex; gap: 3px; height: 5px; }
+.day .dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--info); }
+.day.now .dots i { background: var(--warn); }
 
 .tools { display: flex; gap: 8px; }
 .search { flex: 1; min-width: 0; position: relative; color: var(--faint); }
@@ -88,6 +101,8 @@ input:focus, textarea:focus { outline: none; border-color: var(--primary); box-s
 #list { display: flex; flex-direction: column; gap: 10px; }
 .section { display: flex; align-items: center; gap: 8px; margin: 10px 4px 0; font-size: 12px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
 .section::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--tone); }
+.section::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+.section b { font-size: 11px; letter-spacing: 0; padding: 1px 7px; border-radius: 9px; background: var(--surface-alt); font-variant-numeric: tabular-nums; }
 .card {
   --g: 0.12; display: flex; gap: 12px; align-items: flex-start; padding: 14px 8px 14px 14px; border-radius: 16px;
   background: var(--surface); border: 1px solid color-mix(in srgb, var(--tone) 12%, var(--border));
@@ -109,10 +124,14 @@ input:focus, textarea:focus { outline: none; border-color: var(--primary); box-s
 .pill.course { color: var(--text); background: color-mix(in srgb, var(--text) 9%, transparent); }
 .pill svg { width: 13px; height: 13px; }
 .prio { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: var(--muted); }
-.prio::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--tone); }
+.prio .bars { display: inline-flex; align-items: flex-end; gap: 2px; height: 12px; }
+.prio .bars i { width: 3px; border-radius: 1px; background: var(--border); }
+.prio .bars i:nth-child(1) { height: 5px; } .prio .bars i:nth-child(2) { height: 8.5px; } .prio .bars i:nth-child(3) { height: 12px; }
+.prio .bars i.on { background: var(--tone); }
 .card .notes { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.card .del { flex: none; width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; color: var(--danger); }
-.card .del:hover { background: color-mix(in srgb, var(--danger) 12%, transparent); }
+.count { flex: none; align-self: center; width: 60px; padding: 7px 0; margin-right: 6px; border-radius: 12px; text-align: center; background: color-mix(in srgb, var(--tone) 9%, transparent); border: 1px solid color-mix(in srgb, var(--tone) 28%, transparent); }
+.count b { display: block; font: 700 19px/1.1 var(--display); color: var(--tone); font-variant-numeric: tabular-nums; }
+.count span { display: block; font-size: 10px; font-weight: 600; color: var(--muted); }
 
 .empty { text-align: center; padding: 48px 16px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .empty .blob { width: 56px; height: 56px; border-radius: 18px; display: grid; place-items: center; color: var(--text); background: var(--surface-alt); border: 1px solid var(--border); }
@@ -160,10 +179,11 @@ input:focus, textarea:focus { outline: none; border-color: var(--primary); box-s
 
 <main>
   <header>
-    <div class="mark"><svg class="i" viewBox="0 0 24 24" style="stroke-width:2.6"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+    <div class="mark" aria-hidden="true">AR</div>
     <div class="grow">
+      <p class="eyebrow">AssignmentReminder</p>
       <h1 id="heading">All assignments</h1>
-      <p id="subhead"></p>
+      <p class="sub" id="subhead"></p>
     </div>
     <div class="ring" id="ring" hidden>
       <svg viewBox="0 0 46 46"><circle cx="23" cy="23" r="19"/><circle class="fill" id="ringFill" cx="23" cy="23" r="19" stroke-dasharray="119.4" stroke-dashoffset="119.4"/></svg>
@@ -174,6 +194,8 @@ input:focus, textarea:focus { outline: none; border-color: var(--primary); box-s
   <div class="banner" id="banner" hidden></div>
 
   <div class="tiles" id="tiles"></div>
+
+  <div class="week" id="week" aria-label="Assignments due over the next seven days"></div>
 
   <div class="tools">
     <div class="search">
@@ -259,7 +281,7 @@ input:focus, textarea:focus { outline: none; border-color: var(--primary); box-s
   };
   const TONE = { overdue: "t-danger", today: "t-warn", soon: "t-info", later: "t-muted", none: "t-muted", done: "t-accent" };
   const SECTION = { overdue: "Overdue", today: "Today", soon: "Next 7 days", later: "Later", none: "No due date", done: "Completed" };
-  const PRIO = [["Low", "t-info"], ["Medium", "t-warn"], ["High", "t-danger"]];
+  const PRIO = [["Low", "t-warn"], ["Medium", "t-warn"], ["High", "t-danger"]];
   const FILTERS = [
     { key: "active", label: "To do", icon: "circle", tone: "t-accent", test: s => s !== "done" },
     { key: "week", label: "Due this week", icon: "clock", tone: "t-info", test: s => s === "today" || s === "soon" },
@@ -274,15 +296,15 @@ input:focus, textarea:focus { outline: none; border-color: var(--primary); box-s
   let lastRemoved = null;
   let newId = null;
   const view = { filter: "all", course: "", search: "", sort: "due" };
-  try { Object.assign(view, JSON.parse(localStorage.getItem("phosphorus.view") || "{}"), { search: "" }); } catch (e) {}
-  const saveView = () => { try { localStorage.setItem("phosphorus.view", JSON.stringify({ filter: view.filter, sort: view.sort })); } catch (e) {} };
+  try { Object.assign(view, JSON.parse(localStorage.getItem("ar.view") || "{}"), { search: "" }); } catch (e) {}
+  const saveView = () => { try { localStorage.setItem("ar.view", JSON.stringify({ filter: view.filter, sort: view.sort })); } catch (e) {} };
 
   // ---- storage: the artifact's private per-person store when available, else this browser ----
-  const LOCAL_KEY = "phosphorus.assignments";
+  const LOCAL_KEY = "ar.assignments", OLD_LOCAL_KEY = "phosphorus.assignments";   // the app was renamed
   let col = null;             // db collection for this person, when connected
   let chain = Promise.resolve();
   const warn = text => { $("banner").textContent = text; $("banner").hidden = !text; };
-  const readLocal = () => { try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || "[]"); } catch (e) { return []; } };
+  const readLocal = () => { try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || localStorage.getItem(OLD_LOCAL_KEY) || "[]"); } catch (e) { return []; } };
   const writeLocal = () => { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(items)); return true; } catch (e) { return false; } };
   const timeout = (p, ms) => Promise.race([p, new Promise((_, no) => setTimeout(() => no(new Error("timeout")), ms))]);
 
@@ -345,8 +367,24 @@ input:focus, textarea:focus { outline: none; border-color: var(--primary); box-s
     $("ringFill").style.strokeDashoffset = 119.4 * (1 - frac);
     $("ringText").textContent = Math.round(frac * 100) + "%";
 
+    const active = items.filter(a => !a.done);
+    const high = active.filter(a => a.priority === 2).length;
+    const dueToday = statuses.filter(s => s === "today").length;
+    const oldest = Math.max(0, ...active.filter(a => a.due).map(a => -daysLeft(a)));
+    const details = {
+      active: high ? `${high} high priority` : "No high priority",
+      week: dueToday ? `${dueToday} due today` : "Nothing due today",
+      overdue: oldest > 0 ? `Oldest: ${oldest} day${oldest === 1 ? "" : "s"} late` : "All on time",
+      done: items.length ? `${Math.round(100 * done / items.length)}% of everything` : "Nothing added yet"
+    };
     $("tiles").innerHTML = FILTERS.map(x => `<button type="button" class="tile glow ${x.tone}" data-filter="${x.key}" aria-pressed="${view.filter === x.key}">
-      <span class="label">${x.label}</span><span class="num">${statuses.filter(x.test).length}</span><span class="badge">${icon(x.icon)}</span></button>`).join("");
+      <span class="label">${x.label}</span><span class="num">${statuses.filter(x.test).length}</span><span class="detail">${esc(details[x.key])}</span><span class="badge">${icon(x.icon)}</span></button>`).join("");
+
+    const due = n => items.filter(a => !a.done && a.due === addDays(n)).length;
+    $("week").innerHTML = [0, 1, 2, 3, 4, 5, 6].map(n => { const d = parse(addDays(n)), c = due(n);
+      return `<div class="day ${n === 0 ? "now" : ""} ${c ? "has" : ""}" aria-label="${d.toLocaleDateString(undefined, { weekday: "long", day: "numeric" })}: ${c} due">
+        <span class="wd">${n === 0 ? "Today" : d.toLocaleDateString(undefined, { weekday: "short" })}</span><span class="dn">${d.getDate()}</span>
+        <span class="dots">${"<i></i>".repeat(Math.min(c, 4))}</span></div>`; }).join("");
     $("sortBtn").innerHTML = icon("sort") + esc(SORTS[view.sort]);
     $("sortBtn").setAttribute("aria-label", "Sort by " + SORTS[view.sort] + ". Tap to change.");
 
@@ -367,18 +405,21 @@ input:focus, textarea:focus { outline: none; border-color: var(--primary); box-s
     let html = "", last = null;
     for (const a of list) {
       const s = statusOf(a);
-      if (view.sort === "due" && s !== last) { html += `<div class="section ${TONE[s]}">${SECTION[s]}</div>`; last = s; }
+      if (view.sort === "due" && s !== last) { html += `<div class="section ${TONE[s]}">${SECTION[s]}<b>${list.filter(x => statusOf(x) === s).length}</b></div>`; last = s; }
       const p = PRIO[a.priority] || PRIO[1];
+      const n = a.due ? daysLeft(a) : 0;
+      const cd = s === "done" ? ["✓", "done"] : s === "none" ? ["–", "no date"] : s === "today" ? ["Due", "today"]
+        : [Math.abs(n), `day${Math.abs(n) === 1 ? "" : "s"} ${n < 0 ? "late" : "left"}`];
       html += `<div class="card glow ${TONE[s]} ${a.done ? "done" : ""} ${a.id === newId ? "new" : ""}" data-id="${a.id}">
         <button type="button" class="check" data-act="toggle" role="checkbox" aria-checked="${a.done}" aria-label="Mark ${esc(a.title)} as done">${icon("check")}</button>
         <button type="button" class="body" data-act="edit">
           <span class="title">${esc(a.title)}</span>
           <span class="pills">${a.course ? `<span class="pill course">${esc(a.course)}</span>` : ""}
             <span class="pill">${icon(a.done ? "check" : "calendar")}${esc(dueLabel(a))}</span>
-            ${a.done ? "" : `<span class="prio ${p[1]}">${p[0]}</span>`}</span>
+            ${a.done ? "" : `<span class="prio ${p[1]}"><span class="bars">${[0, 1, 2].map(i => `<i class="${i <= a.priority ? "on" : ""}"></i>`).join("")}</span>${p[0]}</span>`}</span>
           ${a.notes ? `<span class="notes">${esc(a.notes)}</span>` : ""}
         </button>
-        <button type="button" class="del" data-act="delete" aria-label="Delete ${esc(a.title)}">${icon("trash")}</button></div>`;
+        <div class="count" aria-hidden="true"><b>${cd[0]}</b><span>${cd[1]}</span></div></div>`;
     }
     $("list").innerHTML = html;
     newId = null;
@@ -393,7 +434,7 @@ input:focus, textarea:focus { outline: none; border-color: var(--primary); box-s
       const v = n === null ? "" : addDays(n);
       return `<button type="button" class="chip" data-set-due="${v}" aria-pressed="${$("fDue").value === v}">${l}</button>`;
     }).join("");
-    $("fPrio").innerHTML = PRIO.map(([l, t], i) => `<button type="button" class="chip t-tone ${t}" data-set-prio="${i}" aria-pressed="${prio === i}">${l}</button>`).join("");
+    $("fPrio").innerHTML = PRIO.map(([l, t], i) => `<button type="button" class="chip t-tone ${i === 0 ? "t-info" : t}" data-set-prio="${i}" aria-pressed="${prio === i}">${l}</button>`).join("");
   }
   function openForm(a) {
     editId = a ? a.id : null;

@@ -288,6 +288,65 @@ int AssignmentStore::overdueCount() const
     }));
 }
 
+int AssignmentStore::highCount() const
+{
+    return int(std::count_if(m_items.begin(), m_items.end(),
+                             [](const Assignment &a) { return !a.done && a.priority == 2; }));
+}
+
+int AssignmentStore::todayCount() const
+{
+    return int(std::count_if(m_items.begin(), m_items.end(), [this](const Assignment &a) {
+        return statusOf(a) == QLatin1String("today");
+    }));
+}
+
+int AssignmentStore::oldestOverdueDays() const
+{
+    qint64 oldest = 0;
+    for (const Assignment &a : m_items) {
+        if (!a.done && a.due.isValid())
+            oldest = std::max(oldest, a.due.daysTo(today()));
+    }
+    return int(oldest);
+}
+
+QVariantList AssignmentStore::courseStats() const
+{
+    QVariantList result;
+    for (const QString &course : courses()) {
+        int total = 0;
+        int done = 0;
+        for (const Assignment &a : m_items) {
+            if (a.course.compare(course, Qt::CaseInsensitive) != 0)
+                continue;
+            ++total;
+            done += a.done ? 1 : 0;
+        }
+        result.append(QVariantMap{{"name", course}, {"total", total}, {"done", done}});
+    }
+    return result;
+}
+
+QVariantList AssignmentStore::weekDays() const
+{
+    QVariantList result;
+    for (int offset = 0; offset < 7; ++offset) {
+        const QDate date = today().addDays(offset);
+        const int count = int(std::count_if(m_items.begin(), m_items.end(), [&](const Assignment &a) {
+            return !a.done && a.due == date;
+        }));
+        result.append(QVariantMap{
+            {"iso", toIso(date)},
+            {"weekday", QLocale().toString(date, QStringLiteral("ddd"))},
+            {"day", date.day()},
+            {"count", count},
+            {"today", offset == 0},
+        });
+    }
+    return result;
+}
+
 QStringList AssignmentStore::courses() const
 {
     QSet<QString> seen;

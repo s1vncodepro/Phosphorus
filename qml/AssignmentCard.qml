@@ -12,6 +12,7 @@ Rectangle {
     required property string dueDate
     required property string dueLabel
     required property string status
+    required property int daysLeft
     required property int priority
     required property bool done
 
@@ -57,7 +58,7 @@ Rectangle {
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
         anchors.leftMargin: 16
-        anchors.rightMargin: 10
+        anchors.rightMargin: 14
         spacing: 14
 
         // Round checkbox
@@ -167,15 +168,25 @@ Rectangle {
                     }
                 }
 
-                // Priority
+                // Priority, as signal-style bars
                 Row {
                     height: 24
                     spacing: 6
                     visible: !card.done
-                    Rectangle {
+                    Row {
                         anchors.verticalCenter: parent.verticalCenter
-                        width: 7; height: 7; radius: 3.5
-                        color: Theme.priorityColor(card.priority)
+                        height: 12
+                        spacing: 2
+                        Repeater {
+                            model: 3
+                            Rectangle {
+                                required property int index
+                                anchors.bottom: parent.bottom
+                                width: 3; radius: 1
+                                height: 5 + index * 3.5
+                                color: index <= card.priority ? Theme.priorityColor(Math.max(card.priority, 1)) : Theme.border
+                            }
+                        }
                     }
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
@@ -216,6 +227,45 @@ Rectangle {
                 tone: Theme.danger
                 tip: qsTr("Delete")
                 onClicked: card.removeRequested(card.uid)
+            }
+        }
+
+        // Countdown
+        Rectangle {
+            // Hidden on narrow windows, where the due pill already says it.
+            visible: !card.compact
+            Layout.alignment: Qt.AlignVCenter
+            Layout.leftMargin: 4
+            width: 68; height: 52; radius: 12
+            color: Theme.tint(card.statusTone, 0.09)
+            border.width: 1
+            border.color: Theme.tint(card.statusTone, 0.28)
+
+            Column {
+                anchors.centerIn: parent
+                spacing: 0
+
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: card.status === "done" ? "✓"
+                        : card.status === "none" ? "–"
+                        : card.status === "today" ? qsTr("Due")
+                        : Math.abs(card.daysLeft)
+                    color: card.statusTone
+                    font.pixelSize: card.status === "today" ? 16 : 20
+                    font.weight: Font.Bold
+                }
+                Text {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: card.status === "done" ? qsTr("done")
+                        : card.status === "none" ? qsTr("no date")
+                        : card.status === "today" ? qsTr("today")
+                        : card.status === "overdue" ? (card.daysLeft === -1 ? qsTr("day late") : qsTr("days late"))
+                        : (card.daysLeft === 1 ? qsTr("day left") : qsTr("days left"))
+                    color: Theme.textMuted
+                    font.pixelSize: 10
+                    font.weight: Font.DemiBold
+                }
             }
         }
     }

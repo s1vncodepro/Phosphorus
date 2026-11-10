@@ -39,7 +39,7 @@ ApplicationWindow {
     minimumWidth: 380
     minimumHeight: 520
     visible: true
-    title: "Phosphorus"
+    title: "AssignmentReminder"
     color: Theme.bg
 
     Behavior on color { ColorAnimation { duration: Theme.normal } }
@@ -133,6 +133,7 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.preferredWidth: 1   // equal-width columns
                     label: qsTr("To do"); iconName: "circle"; value: store.activeCount; tone: Theme.accent
+                    detail: store.highCount > 0 ? qsTr("%1 high priority").arg(store.highCount) : qsTr("No high priority")
                     active: assignments.statusFilter === "active"
                     onClicked: window.toggleFilter("active")
                 }
@@ -140,6 +141,7 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.preferredWidth: 1   // equal-width columns
                     label: qsTr("Due this week"); iconName: "clock"; value: store.weekCount; tone: Theme.info
+                    detail: store.todayCount > 0 ? qsTr("%1 due today").arg(store.todayCount) : qsTr("Nothing due today")
                     active: assignments.statusFilter === "week"
                     onClicked: window.toggleFilter("week")
                 }
@@ -147,6 +149,7 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.preferredWidth: 1   // equal-width columns
                     label: qsTr("Overdue"); iconName: "alert"; value: store.overdueCount; tone: Theme.danger
+                    detail: store.overdueCount > 0 ? (store.oldestOverdueDays === 1 ? qsTr("Oldest: 1 day late") : qsTr("Oldest: %1 days late").arg(store.oldestOverdueDays)) : qsTr("All on time")
                     active: assignments.statusFilter === "overdue"
                     onClicked: window.toggleFilter("overdue")
                 }
@@ -154,8 +157,80 @@ ApplicationWindow {
                     Layout.fillWidth: true
                     Layout.preferredWidth: 1   // equal-width columns
                     label: qsTr("Completed"); iconName: "done"; value: store.doneCount; tone: Theme.textFaint
+                    detail: store.total > 0 ? qsTr("%1% of everything").arg(Math.round(100 * store.doneCount / store.total)) : qsTr("Nothing added yet")
                     active: assignments.statusFilter === "done"
                     onClicked: window.toggleFilter("done")
+                }
+            }
+
+            // The next seven days at a glance
+            Rectangle {
+                Layout.fillWidth: true
+                implicitHeight: 74
+                radius: 16
+                color: Theme.surface
+                border.width: 1
+                border.color: Theme.border
+
+                Row {
+                    anchors.fill: parent
+                    anchors.margins: 8
+
+                    Repeater {
+                        model: store.weekDays
+
+                        Item {
+                            id: dayCell
+                            required property var modelData
+                            width: parent.width / 7
+                            height: parent.height
+
+                            Accessible.name: modelData.weekday + " " + modelData.day + ": " + qsTr("%n due", "", modelData.count)
+
+                            Column {
+                                anchors.centerIn: parent
+                                spacing: 3
+
+                                Text {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    text: dayCell.modelData.today ? qsTr("TODAY") : dayCell.modelData.weekday.toUpperCase()
+                                    color: dayCell.modelData.today ? Theme.text : Theme.textFaint
+                                    font.pixelSize: 10
+                                    font.weight: Font.Bold
+                                    font.letterSpacing: 0.8
+                                }
+                                Rectangle {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    width: 28; height: 28; radius: 14
+                                    color: dayCell.modelData.today ? Theme.primary : "transparent"
+                                    Text {
+                                        anchors.centerIn: parent
+                                        text: dayCell.modelData.day
+                                        color: dayCell.modelData.today ? Theme.onPrimary
+                                             : dayCell.modelData.count > 0 ? Theme.text : Theme.textMuted
+                                        font.pixelSize: 14
+                                        font.weight: Font.DemiBold
+                                    }
+                                }
+                                // One dot per assignment due that day (up to four)
+                                Item {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    width: 30; height: 5   // keeps its slot when there are no dots
+                                    Row {
+                                        anchors.centerIn: parent
+                                        spacing: 3
+                                        Repeater {
+                                            model: Math.min(dayCell.modelData.count, 4)
+                                            Rectangle {
+                                                width: 5; height: 5; radius: 2.5
+                                                color: dayCell.modelData.today ? Theme.warn : Theme.info
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -280,6 +355,7 @@ ApplicationWindow {
                         height: 34
 
                         Row {
+                            id: headerRow
                             anchors.left: parent.left
                             anchors.leftMargin: list.bleed + 4
                             anchors.bottom: parent.bottom
@@ -298,6 +374,30 @@ ApplicationWindow {
                                 font.weight: Font.Bold
                                 font.letterSpacing: 0.8
                             }
+                            Rectangle {
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: countText.implicitWidth + 12
+                                height: 18; radius: 9
+                                color: Theme.surfaceAlt
+                                Text {
+                                    id: countText
+                                    anchors.centerIn: parent
+                                    // Reading revision re-runs the count whenever the rows change.
+                                    text: (assignments.revision, assignments.sectionCount(header.section))
+                                    color: Theme.textMuted
+                                    font.pixelSize: 11
+                                    font.weight: Font.Bold
+                                }
+                            }
+                        }
+                        Rectangle {
+                            anchors.left: headerRow.right
+                            anchors.leftMargin: 10
+                            anchors.right: parent.right
+                            anchors.rightMargin: list.bleed + 2
+                            anchors.verticalCenter: headerRow.verticalCenter
+                            height: 1
+                            color: Theme.border
                         }
                     }
 

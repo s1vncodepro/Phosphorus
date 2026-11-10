@@ -14,12 +14,29 @@ AssignmentFilter::AssignmentFilter(AssignmentStore *store, QObject *parent)
     connect(this, &QAbstractItemModel::modelReset, this, &AssignmentFilter::countChanged);
     connect(this, &QAbstractItemModel::layoutChanged, this, &AssignmentFilter::countChanged);
 
+    const auto bump = [this] { ++m_revision; emit revisionChanged(); };
+    connect(this, &QAbstractItemModel::rowsInserted, this, bump);
+    connect(this, &QAbstractItemModel::rowsRemoved, this, bump);
+    connect(this, &QAbstractItemModel::modelReset, this, bump);
+    connect(this, &QAbstractItemModel::layoutChanged, this, bump);
+    connect(this, &QAbstractItemModel::dataChanged, this, bump);
+
     // A course filter that no longer matches anything (its last assignment was
     // deleted or renamed) would leave the list empty with no visible reason.
     connect(store, &AssignmentStore::statsChanged, this, [this] {
         if (!m_course.isEmpty() && !m_store->courses().contains(m_course, Qt::CaseInsensitive))
             setCourse(QString());
     });
+}
+
+int AssignmentFilter::sectionCount(const QString &status) const
+{
+    int count = 0;
+    for (int row = 0; row < rowCount(); ++row) {
+        if (index(row, 0).data(AssignmentStore::StatusRole).toString() == status)
+            ++count;
+    }
+    return count;
 }
 
 void AssignmentFilter::setStatusFilter(const QString &value)

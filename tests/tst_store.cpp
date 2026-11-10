@@ -48,6 +48,22 @@ private slots:
         QCOMPARE(store.weekCount(), 2);
         QCOMPARE(store.activeCount(), 6);
         QCOMPARE(store.courses(), QStringList({"Art", "Math"}));   // case-insensitive dedupe
+        QCOMPARE(store.todayCount(), 1);
+        QCOMPARE(store.oldestOverdueDays(), 3);
+        QCOMPARE(store.highCount(), 0);
+
+        const QVariantList week = store.weekDays();
+        QCOMPARE(week.size(), 7);
+        QCOMPARE(week.at(0).toMap().value("today").toBool(), true);
+        QCOMPARE(week.at(0).toMap().value("count").toInt(), 1);
+        QCOMPARE(week.at(1).toMap().value("iso").toString(), QString("2026-11-11"));
+        QCOMPARE(week.at(1).toMap().value("count").toInt(), 1);
+        QCOMPARE(week.at(2).toMap().value("count").toInt(), 0);
+
+        const QVariantMap art = store.courseStats().at(0).toMap();
+        QCOMPARE(art.value("name").toString(), QString("Art"));
+        QCOMPARE(art.value("total").toInt(), 2);
+        QCOMPARE(art.value("done").toInt(), 0);
 
         QVERIFY(store.setDone(today, true));
         QCOMPARE(store.doneCount(), 1);
@@ -137,6 +153,9 @@ private slots:
 
         // Default: by due date, undated last.
         QCOMPARE(titles(filter), QStringList({"Problem set", "Lab report", "Essay", "Reading"}));
+        QCOMPARE(filter.sectionCount("overdue"), 1);
+        QCOMPARE(filter.sectionCount("later"), 1);
+        QCOMPARE(filter.sectionCount("done"), 0);
 
         filter.setSortMode("priority");
         QCOMPARE(titles(filter), QStringList({"Problem set", "Reading", "Essay", "Lab report"}));

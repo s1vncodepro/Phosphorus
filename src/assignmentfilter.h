@@ -15,6 +15,8 @@ class AssignmentFilter : public QSortFilterProxyModel
     // due | priority | title
     Q_PROPERTY(QString sortMode READ sortMode WRITE setSortMode NOTIFY sortModeChanged)
     Q_PROPERTY(int count READ count NOTIFY countChanged)
+    // Bumps whenever the visible rows change in any way, so QML can re-run sectionCount().
+    Q_PROPERTY(int revision READ revision NOTIFY revisionChanged)
 
 public:
     explicit AssignmentFilter(AssignmentStore *store, QObject *parent = nullptr);
@@ -28,6 +30,10 @@ public:
     QString sortMode() const { return m_sortMode; }
     void setSortMode(const QString &value);
     int count() const { return rowCount(); }
+    int revision() const { return m_revision; }
+
+    // How many visible rows have this status (the list's section headings show it).
+    Q_INVOKABLE int sectionCount(const QString &status) const;
 
 signals:
     void statusFilterChanged();
@@ -35,6 +41,7 @@ signals:
     void searchChanged();
     void sortModeChanged();
     void countChanged();
+    void revisionChanged();
 
 protected:
     bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const override;
@@ -42,6 +49,7 @@ protected:
 
 private:
     AssignmentStore *m_store;
+    int m_revision = 0;
     QString m_statusFilter = QStringLiteral("all");
     QString m_course;
     QString m_search;

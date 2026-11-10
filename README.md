@@ -1,6 +1,6 @@
-# Phosphorus
+# AssignmentReminder
 
-A small desktop app for keeping track of your own assignments. Written in C++17
+AssignmentReminder (AR) is a small desktop app for keeping track of your own assignments. Written in C++17
 with a Qt Quick (QML) interface.
 
 ## What it does
@@ -8,6 +8,8 @@ with a Qt Quick (QML) interface.
 - Add assignments with a title, course, due date, priority and notes.
 - See at a glance what is to do, due this week, overdue and completed. The
   summary tiles and the sidebar are filters: click one to narrow the list.
+- A seven-day strip shows how much is due each day, each card counts down the
+  days left, and the sidebar tracks progress per course.
 - Search by title, course or notes, filter by course, and sort by due date,
   priority or title.
 - Tick assignments off, edit them by clicking a card, delete them (with undo).
@@ -37,7 +39,7 @@ You need CMake 3.21+, a C++17 compiler and Qt 6.4 or newer with the
 ```sh
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
-./build/phosphorus            # build\Release\phosphorus.exe with Visual Studio
+./build/assignmentreminder    # build\Release\assignmentreminder.exe with Visual Studio
 ```
 
 Run the unit tests with `ctest --test-dir build`.
@@ -48,11 +50,13 @@ Assignments are stored in `assignments.json` in the per-user app data folder:
 
 | OS      | Location                                       |
 | ------- | ---------------------------------------------- |
-| Windows | `%APPDATA%\Phosphorus`                         |
-| macOS   | `~/Library/Application Support/Phosphorus`     |
-| Linux   | `~/.local/share/Phosphorus`                    |
+| Windows | `%APPDATA%\AssignmentReminder`                 |
+| macOS   | `~/Library/Application Support/AssignmentReminder` |
+| Linux   | `~/.local/share/AssignmentReminder`            |
 
-Set the `PHOSPHORUS_DATA_DIR` environment variable to use a different folder.
+Set the `AR_DATA_DIR` environment variable to use a different folder. The app
+was previously called Phosphorus; on first start it copies your data over from
+the old `Phosphorus` folder if there is one.
 
 ## Phone version
 
