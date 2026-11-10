@@ -27,6 +27,21 @@ QtObject {
     readonly property color info: dark ? "#7FA7D9" : "#2877CC"
 
     readonly property int radius: 14
+
+    // Motion. Cubic-bezier control points for Easing.BezierSpline, as
+    // [c1x, c1y, c2x, c2y, endX, endY]:
+    //   overshoot  - runs ~10% past the target and settles back (things arriving)
+    //   glide      - leaves fast, lands slowly (things moving across the screen)
+    //   anticipate - dips back slightly before leaving (things going away)
+    readonly property var overshoot: [0.34, 1.56, 0.64, 1, 1, 1]
+    readonly property var glide: [0.16, 1, 0.3, 1, 1, 1]
+    readonly property var anticipate: [0.36, 0, 0.66, -0.56, 1, 1]
+    readonly property int slow: 420
+    // Delay for the nth item of a staggered group. Square-root spacing: the gaps
+    // shrink as the list goes on, so long lists do not take forever to arrive.
+    function stagger(index) {
+        return Math.round(70 * Math.sqrt(Math.min(index, 16)))
+    }
     readonly property int fast: 140
     readonly property int normal: 220
 

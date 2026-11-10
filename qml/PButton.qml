@@ -16,7 +16,7 @@ AbstractButton {
     focusPolicy: Qt.TabFocus
     scale: down ? 0.96 : 1
 
-    Behavior on scale { NumberAnimation { duration: Theme.fast; easing.type: Easing.OutCubic } }
+    Behavior on scale { SpringAnimation { spring: 6; damping: 0.3; epsilon: 0.005 } }
 
     Accessible.name: text.length > 0 ? text : tip
 

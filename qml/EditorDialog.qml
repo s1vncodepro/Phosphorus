@@ -76,13 +76,13 @@ Popup {
     enter: Transition {
         ParallelAnimation {
             NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Theme.normal; easing.type: Easing.OutCubic }
-            NumberAnimation { property: "scale"; from: 0.94; to: 1; duration: Theme.normal; easing.type: Easing.OutCubic }
+            NumberAnimation { property: "scale"; from: 0.86; to: 1; duration: Theme.slow; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.overshoot }
         }
     }
     exit: Transition {
         ParallelAnimation {
-            NumberAnimation { property: "opacity"; to: 0; duration: Theme.fast }
-            NumberAnimation { property: "scale"; to: 0.96; duration: Theme.fast }
+            NumberAnimation { property: "opacity"; to: 0; duration: Theme.normal }
+            NumberAnimation { property: "scale"; to: 0.9; duration: Theme.normal; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.anticipate }
         }
     }
 
@@ -284,7 +284,7 @@ Popup {
                 Layout.fillWidth: true
                 Layout.preferredHeight: dialog.calendarOpen ? calendar.implicitHeight + 8 : 0
                 clip: true
-                Behavior on Layout.preferredHeight { NumberAnimation { duration: Theme.normal; easing.type: Easing.OutCubic } }
+                Behavior on Layout.preferredHeight { NumberAnimation { duration: Theme.slow; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.glide } }
 
                 DatePicker {
                     id: calendar

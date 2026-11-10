@@ -61,61 +61,91 @@ Rectangle {
             }
         }
 
-        Repeater {
-            model: sidebar.filters
+        Item {
+            id: nav
+            Layout.fillWidth: true
+            implicitHeight: sidebar.filters.length * 46 - 4
 
+            readonly property int activeIndex: {
+                for (let i = 0; i < sidebar.filters.length; ++i) {
+                    if (sidebar.filters[i].key === assignments.statusFilter)
+                        return i
+                }
+                return 0
+            }
+
+            // One highlight that springs from item to item instead of each row
+            // switching its own background on and off.
             Rectangle {
-                id: item
-                required property var modelData
-                readonly property bool active: assignments.statusFilter === modelData.key
-
-                Layout.fillWidth: true
+                width: parent.width
                 height: 42
                 radius: 12
-                color: active ? Theme.tint(Theme.primary, Theme.dark ? 0.09 : 0.14) : hover.containsMouse ? Theme.surfaceAlt : "transparent"
-                Behavior on color { ColorAnimation { duration: Theme.fast } }
+                color: Theme.tint(Theme.primary, Theme.dark ? 0.09 : 0.14)
+                y: nav.activeIndex * 46
+                Behavior on y { SpringAnimation { spring: 4.5; damping: 0.36; epsilon: 0.1 } }
+            }
 
-                Accessible.role: Accessible.Button
-                Accessible.name: modelData.label
+            Column {
+                anchors.fill: parent
+                spacing: 4
 
-                Icon {
-                    id: dot
-                    anchors.left: parent.left
-                    anchors.leftMargin: 12
-                    anchors.verticalCenter: parent.verticalCenter
-                    size: 17
-                    name: item.modelData.icon
-                    color: item.active ? Theme.text : item.modelData.tone
-                }
-                Text {
-                    anchors.left: dot.right
-                    anchors.leftMargin: 11
-                    anchors.right: count.left
-                    anchors.rightMargin: 8
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: item.modelData.label
-                    elide: Text.ElideRight
-                    color: item.active ? Theme.text : Theme.textMuted
-                    font.pixelSize: 14
-                    font.weight: item.active ? Font.DemiBold : Font.Medium
-                }
-                Text {
-                    id: count
-                    anchors.right: parent.right
-                    anchors.rightMargin: 12
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: item.modelData.count
-                    color: item.active ? Theme.text : Theme.textFaint
-                    font.pixelSize: 13
-                    font.weight: Font.DemiBold
-                }
+                Repeater {
+                    model: sidebar.filters
 
-                MouseArea {
-                    id: hover
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: assignments.statusFilter = item.modelData.key
+                    Rectangle {
+                        id: item
+                        required property var modelData
+                        readonly property bool active: assignments.statusFilter === modelData.key
+
+                        width: parent.width
+                        height: 42
+                        radius: 12
+                        color: !active && hover.containsMouse ? Theme.surfaceAlt : "transparent"
+                        Behavior on color { ColorAnimation { duration: Theme.fast } }
+
+                        Accessible.role: Accessible.Button
+                        Accessible.name: modelData.label
+
+                        Icon {
+                            id: dot
+                            anchors.left: parent.left
+                            anchors.leftMargin: 12
+                            anchors.verticalCenter: parent.verticalCenter
+                            size: 17
+                            name: item.modelData.icon
+                            color: item.active ? Theme.text : item.modelData.tone
+                        }
+                        Text {
+                            anchors.left: dot.right
+                            anchors.leftMargin: 11
+                            anchors.right: count.left
+                            anchors.rightMargin: 8
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: item.modelData.label
+                            elide: Text.ElideRight
+                            color: item.active ? Theme.text : Theme.textMuted
+                            font.pixelSize: 14
+                            font.weight: item.active ? Font.DemiBold : Font.Medium
+                        }
+                        Text {
+                            id: count
+                            anchors.right: parent.right
+                            anchors.rightMargin: 12
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: item.modelData.count
+                            color: item.active ? Theme.text : Theme.textFaint
+                            font.pixelSize: 13
+                            font.weight: Font.DemiBold
+                        }
+
+                        MouseArea {
+                            id: hover
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: assignments.statusFilter = item.modelData.key
+                        }
+                    }
                 }
             }
         }
@@ -182,6 +212,7 @@ Rectangle {
                         height: parent.height; radius: 1.5
                         color: Theme.accent
                         width: parent.width * courseRow.modelData.done / Math.max(1, courseRow.modelData.total)
+                        Behavior on width { NumberAnimation { duration: 700; easing.type: Easing.OutExpo } }
                     }
                 }
                 MouseArea {
@@ -206,7 +237,8 @@ Rectangle {
             visible: store.total > 0
 
             property real fraction: store.total > 0 ? store.doneCount / store.total : 0
-            Behavior on fraction { NumberAnimation { duration: 500; easing.type: Easing.OutCubic } }
+            // A loose spring, so the ring swings past the new value and settles
+            Behavior on fraction { SpringAnimation { spring: 2.2; damping: 0.22; epsilon: 0.001 } }
             onFractionChanged: ring.requestPaint()
 
             Canvas {
@@ -234,14 +266,14 @@ Rectangle {
                     if (progress.fraction > 0.001) {
                         ctx.strokeStyle = fill
                         ctx.beginPath()
-                        ctx.arc(28, 28, 23, -Math.PI / 2, -Math.PI / 2 + 2 * Math.PI * progress.fraction)
+                        ctx.arc(28, 28, 23, -Math.PI / 2, -Math.PI / 2 + 2 * Math.PI * Math.min(1, progress.fraction))
                         ctx.stroke()
                     }
                 }
 
                 Text {
                     anchors.centerIn: parent
-                    text: Math.round(progress.fraction * 100) + "%"
+                    text: Math.round(Math.max(0, Math.min(1, progress.fraction)) * 100) + "%"
                     color: Theme.text
                     font.pixelSize: 13
                     font.weight: Font.Bold

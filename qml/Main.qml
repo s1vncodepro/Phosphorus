@@ -203,6 +203,14 @@ ApplicationWindow {
                                     anchors.horizontalCenter: parent.horizontalCenter
                                     width: 28; height: 28; radius: 14
                                     color: dayCell.modelData.today ? Theme.primary : "transparent"
+
+                                    // Today breathes: a slow sine-eased swell
+                                    SequentialAnimation on scale {
+                                        running: dayCell.modelData.today
+                                        loops: Animation.Infinite
+                                        NumberAnimation { to: 1.09; duration: 1400; easing.type: Easing.InOutSine }
+                                        NumberAnimation { to: 1; duration: 1400; easing.type: Easing.InOutSine }
+                                    }
                                     Text {
                                         anchors.centerIn: parent
                                         text: dayCell.modelData.day
@@ -222,8 +230,20 @@ ApplicationWindow {
                                         Repeater {
                                             model: Math.min(dayCell.modelData.count, 4)
                                             Rectangle {
+                                                id: dot
+                                                required property int index
                                                 width: 5; height: 5; radius: 2.5
                                                 color: dayCell.modelData.today ? Theme.warn : Theme.info
+                                                scale: 0
+                                                // Dots bounce in one after another
+                                                SequentialAnimation {
+                                                    running: true
+                                                    PauseAnimation { duration: 120 + dot.index * 80 }
+                                                    NumberAnimation {
+                                                        target: dot; property: "scale"; to: 1; duration: 700
+                                                        easing.type: Easing.OutElastic; easing.amplitude: 1.4; easing.period: 0.45
+                                                    }
+                                                }
                                             }
                                         }
                                     }
@@ -409,26 +429,48 @@ ApplicationWindow {
                         onRemoveRequested: uid => window.removeAssignment(uid)
                     }
 
+                    // Cards arrive one after another: each rises 18px and scales up
+                    // past full size before settling, delayed by its position.
                     add: Transition {
-                        ParallelAnimation {
-                            NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Theme.normal }
-                            NumberAnimation { property: "scale"; from: 0.96; to: 1; duration: Theme.normal; easing.type: Easing.OutCubic }
+                        id: addTransition
+                        SequentialAnimation {
+                            PropertyAction { property: "opacity"; value: 0 }
+                            PauseAnimation { duration: Theme.stagger(addTransition.ViewTransition.index) }
+                            ParallelAnimation {
+                                NumberAnimation { property: "opacity"; to: 1; duration: Theme.normal }
+                                NumberAnimation {
+                                    property: "scale"; from: 0.92; to: 1; duration: Theme.slow
+                                    easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.overshoot
+                                }
+                                NumberAnimation {
+                                    property: "y"; from: addTransition.ViewTransition.destination.y + 18
+                                    duration: Theme.slow
+                                    easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.glide
+                                }
+                            }
                         }
                     }
+                    populate: add
                     remove: Transition {
                         ParallelAnimation {
-                            NumberAnimation { property: "opacity"; to: 0; duration: Theme.fast }
-                            NumberAnimation { property: "scale"; to: 0.96; duration: Theme.fast }
+                            NumberAnimation { property: "opacity"; to: 0; duration: Theme.normal }
+                            NumberAnimation {
+                                property: "scale"; to: 0.9; duration: Theme.normal
+                                easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.anticipate
+                            }
                         }
                     }
+                    // Neighbours slide into the gap and overshoot slightly, like a damped spring.
                     displaced: Transition {
-                        NumberAnimation { properties: "x,y"; duration: Theme.normal; easing.type: Easing.OutCubic }
+                        NumberAnimation { property: "y"; duration: Theme.slow; easing.type: Easing.OutBack; easing.overshoot: 1.15 }
                         // Finish any add animation this item was interrupted in.
                         NumberAnimation { property: "opacity"; to: 1; duration: Theme.fast }
                         NumberAnimation { property: "scale"; to: 1; duration: Theme.fast }
                     }
                     move: Transition {
-                        NumberAnimation { properties: "x,y"; duration: Theme.normal; easing.type: Easing.OutCubic }
+                        NumberAnimation { property: "y"; duration: Theme.slow; easing.type: Easing.OutBack; easing.overshoot: 1.15 }
+                        NumberAnimation { property: "opacity"; to: 1; duration: Theme.fast }
+                        NumberAnimation { property: "scale"; to: 1; duration: Theme.fast }
                     }
                 }
 
@@ -515,7 +557,7 @@ ApplicationWindow {
         opacity: shown ? 1 : 0
         z: 10
 
-        Behavior on anchors.bottomMargin { NumberAnimation { duration: Theme.normal; easing.type: Easing.OutCubic } }
+        Behavior on anchors.bottomMargin { SpringAnimation { spring: 4; damping: 0.32; epsilon: 0.25 } }
         Behavior on opacity { NumberAnimation { duration: Theme.normal } }
 
         Timer { id: toastTimer; interval: 6000; onTriggered: toast.shown = false }

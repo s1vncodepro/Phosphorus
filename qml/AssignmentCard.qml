@@ -47,6 +47,12 @@ Rectangle {
     // MouseAreas (not TapHandlers) so a click on the checkbox or a button is
     // consumed there and does not also open the editor.
     HoverHandler { id: hover }
+
+    // Lifts on hover, on a spring
+    transform: Translate {
+        y: hover.hovered ? -2 : 0
+        Behavior on y { SpringAnimation { spring: 5; damping: 0.28; epsilon: 0.05 } }
+    }
     MouseArea {
         anchors.fill: parent
         onClicked: card.editRequested(card.uid)
@@ -76,6 +82,26 @@ Rectangle {
             Behavior on border.color { ColorAnimation { duration: Theme.fast } }
             Behavior on scale { NumberAnimation { duration: Theme.fast; easing.type: Easing.OutBack } }
 
+            // A ring that expands and fades when the box is ticked
+            Rectangle {
+                id: ripple
+                anchors.centerIn: parent
+                width: parent.width; height: width; radius: width / 2
+                color: "transparent"
+                border.width: 2
+                border.color: Theme.accent
+                opacity: 0
+                ParallelAnimation {
+                    id: rippleAnim
+                    NumberAnimation { target: ripple; property: "scale"; from: 1; to: 2.6; duration: 520; easing.type: Easing.OutExpo }
+                    NumberAnimation { target: ripple; property: "opacity"; from: 0.7; to: 0; duration: 520; easing.type: Easing.OutQuad }
+                }
+            }
+            Connections {
+                target: card
+                function onDoneChanged() { if (card.done) rippleAnim.restart() }
+            }
+
             Accessible.role: Accessible.CheckBox
             Accessible.name: qsTr("Mark %1 as done").arg(card.title)
             Accessible.checked: card.done
@@ -89,7 +115,7 @@ Rectangle {
                 opacity: card.done ? 1 : 0
                 scale: card.done ? 1 : 0.4
                 Behavior on opacity { NumberAnimation { duration: Theme.fast } }
-                Behavior on scale { NumberAnimation { duration: Theme.normal; easing.type: Easing.OutBack } }
+                Behavior on scale { NumberAnimation { duration: 520; easing.type: Easing.OutElastic; easing.amplitude: 1.3; easing.period: 0.45 } }
             }
 
             MouseArea {

@@ -46,7 +46,7 @@ header .grow { flex: 1; min-width: 0; }
 .ring { position: relative; width: 46px; height: 46px; flex: none; }
 .ring svg { width: 46px; height: 46px; transform: rotate(-90deg); }
 .ring circle { fill: none; stroke-width: 5; stroke: var(--border); }
-.ring circle.fill { stroke: var(--accent); stroke-linecap: round; transition: stroke-dashoffset .5s ease; }
+.ring circle.fill { stroke: var(--accent); stroke-linecap: round; }
 .ring span { position: absolute; inset: 0; display: grid; place-items: center; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
 
 .banner { border-radius: 12px; padding: 10px 14px; font-size: 13px; background: color-mix(in srgb, var(--warn) 14%, var(--surface)); border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--border)); }
@@ -110,11 +110,10 @@ input:focus, textarea:focus { outline: none; border-color: var(--primary); box-s
 }
 .card:hover { --g: 1; border-color: color-mix(in srgb, var(--tone) 75%, var(--border)); }
 .card.done { --g: 0.08; }
-.card.new { animation: pop .25s ease-out; }
-@keyframes pop { from { opacity: 0; transform: scale(.96); } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
-.check { flex: none; width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--faint); display: grid; place-items: center; color: transparent; transition: background .15s, border-color .15s; }
+.check { position: relative; flex: none; width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--faint); display: grid; place-items: center; color: transparent; transition: background .15s, border-color .15s; }
 .check svg { width: 15px; height: 15px; stroke-width: 3; }
+.check .ripple { position: absolute; inset: -2px; border-radius: 50%; border: 2px solid var(--accent); pointer-events: none; opacity: 0; }
 .done .check { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 .card .body { flex: 1; min-width: 0; text-align: left; display: flex; flex-direction: column; gap: 6px; }
 .card .title { font-weight: 600; font-size: 15px; overflow-wrap: anywhere; }
@@ -154,9 +153,8 @@ input:focus, textarea:focus { outline: none; border-color: var(--primary); box-s
   border-radius: 20px 20px 0 0; padding: 20px;
   padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px));
   padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-  display: flex; flex-direction: column; gap: 8px; animation: rise .22s ease-out;
+  display: flex; flex-direction: column; gap: 8px;
 }
-@keyframes rise { from { transform: translateY(40px); opacity: 0; } }
 @media (min-width: 620px) { .scrim { align-items: center; } .sheet { border-radius: 20px; border-bottom: 1px solid color-mix(in srgb, var(--primary) 22%, var(--border)); } }
 .sheet h2 { font: 700 19px var(--display); margin: 0; flex: 1; }
 .sheet .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -353,6 +351,55 @@ input:focus, textarea:focus { outline: none; border-color: var(--primary); box-s
     return out.sort((a, b) => { if (a.done !== b.done) return a.done ? 1 : -1; for (const cmp of order) { const r = cmp(a, b); if (r) return r; } return 0; });
   }
 
+  // ---- motion ----
+  // Every animation here is a tween: a curve p -> value, sampled into keyframes and
+  // handed to the browser, so it runs off the main thread.
+  const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const clamp01 = x => Math.max(0, Math.min(1, x));
+  // Step response of a damped spring released at 0 and pulled towards 1:
+  //   x(t) = 1 - e^(-ζωt) · (cos ω_d·t + (ζω/ω_d) · sin ω_d·t),   ω_d = ω·√(1-ζ²)
+  // ζ (0..1) is the damping ratio: lower swings further past the target. ω is the
+  // natural frequency in rad/s: higher is faster. The duration is the time the
+  // decay envelope e^(-ζωt) takes to fall under 0.2%, i.e. ln(500)/(ζω).
+  const spring = (zeta, omega) => {
+    const wd = omega * Math.sqrt(1 - zeta * zeta), k = zeta * omega;
+    const dur = Math.log(500) / k;
+    return { ms: dur * 1000, at: p => { const t = p * dur; return 1 - Math.exp(-k * t) * (Math.cos(wd * t) + (k / wd) * Math.sin(wd * t)); } };
+  };
+  const SPRING = { bouncy: spring(0.42, 15), snappy: spring(0.68, 20), loose: spring(0.26, 10) };
+  const EASE = {
+    // Exponential decay towards the target
+    outExpo: p => p >= 1 ? 1 : 1 - Math.pow(2, -10 * p),
+    // Decaying sine wave: rings around the target a few times
+    outElastic: p => p <= 0 ? 0 : p >= 1 ? 1 : Math.pow(2, -10 * p) * Math.sin((p * 10 - 0.75) * (2 * Math.PI / 3)) + 1,
+    // Cubic that dips backwards before leaving
+    inBack: p => { const c = 1.70158; return (c + 1) * p * p * p - c * p * p; }
+  };
+  // Gaps between staggered items shrink with the square root of their position.
+  const stagger = i => 70 * Math.sqrt(Math.min(i, 16));
+  // Run `frame(v)` (v goes 0 -> 1 along the curve, and may overshoot) on an element.
+  function tween(el, curve, frame, opts = {}) {
+    if (calm || !el || !el.animate) return null;
+    const ms = opts.ms || curve.ms || 500, at = curve.at || curve;
+    const steps = Math.max(2, Math.min(90, Math.round(ms / 16)));
+    const frames = [];
+    for (let i = 0; i <= steps; i++) frames.push(frame(at(i / steps), i / steps));
+    return el.animate(frames, { duration: ms, delay: opts.delay || 0, easing: "linear", fill: "backwards" });
+  }
+  // Count a number up or down on screen.
+  function countTo(el, from, to, fmt = v => v) {
+    if (calm || from === to) { el.textContent = fmt(to); return; }
+    const start = performance.now(), ms = 700;
+    const step = now => {
+      const p = clamp01((now - start) / ms);
+      el.textContent = fmt(Math.round(from + (to - from) * EASE.outExpo(p)));
+      if (p < 1 && el.isConnected) requestAnimationFrame(step);
+    };
+    step(start);
+  }
+  const shown = { tiles: {}, frac: 0, week: "", filter: null, first: true };
+  let toggledId = null;
+
   // ---- render ----
   function render() {
     if (view.course && !courses().some(c => c.toLowerCase() === view.course.toLowerCase())) view.course = "";
@@ -364,8 +411,11 @@ input:focus, textarea:focus { outline: none; border-color: var(--primary); box-s
     $("subhead").textContent = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }) + (loaded ? ` · ${todo} to do` : "");
     $("ring").hidden = items.length === 0;
     const frac = items.length ? done / items.length : 0;
+    // The ring swings past its new value on a loose spring, then settles.
+    const from = shown.frac; shown.frac = frac;
     $("ringFill").style.strokeDashoffset = 119.4 * (1 - frac);
-    $("ringText").textContent = Math.round(frac * 100) + "%";
+    if (from !== frac) tween($("ringFill"), SPRING.loose, v => ({ strokeDashoffset: 119.4 * (1 - clamp01(from + (frac - from) * v)) }));
+    countTo($("ringText"), Math.round(from * 100), Math.round(frac * 100), v => v + "%");
 
     const active = items.filter(a => !a.done);
     const high = active.filter(a => a.priority === 2).length;
@@ -385,6 +435,24 @@ input:focus, textarea:focus { outline: none; border-color: var(--primary); box-s
       return `<div class="day ${n === 0 ? "now" : ""} ${c ? "has" : ""}" aria-label="${d.toLocaleDateString(undefined, { weekday: "long", day: "numeric" })}: ${c} due">
         <span class="wd">${n === 0 ? "Today" : d.toLocaleDateString(undefined, { weekday: "short" })}</span><span class="dn">${d.getDate()}</span>
         <span class="dots">${"<i></i>".repeat(Math.min(c, 4))}</span></div>`; }).join("");
+    // Tile numbers count to their new value and the badge jumps; the tile you just picked pulses.
+    $("tiles").querySelectorAll(".tile").forEach(t => {
+      const key = t.dataset.filter, num = t.querySelector(".num"), to = Number(num.textContent), from = shown.tiles[key];
+      if (from !== undefined && from !== to) {
+        countTo(num, from, to);
+        tween(t.querySelector(".badge"), EASE.outElastic, v => ({ transform: `scale(${1.35 - 0.35 * v})` }), { ms: 650 });
+      }
+      shown.tiles[key] = to;
+      if (shown.filter !== null && shown.filter !== view.filter && key === view.filter) {
+        tween(t, SPRING.bouncy, v => ({ transform: `scale(${0.93 + 0.07 * v})` }));
+        tween(t.querySelector(".badge"), SPRING.snappy, v => ({ transform: `rotate(${360 * v}deg)` }));
+      }
+    });
+    shown.filter = view.filter;
+    // Week dots bounce in, one after another, whenever the week's counts change.
+    const weekSig = [...$("week").querySelectorAll(".dots")].map(d => d.children.length).join();
+    if (weekSig !== shown.week) $("week").querySelectorAll(".dots i").forEach((d, i) => tween(d, EASE.outElastic, v => ({ transform: `scale(${v})` }), { ms: 700, delay: 120 + i * 80 }));
+    shown.week = weekSig;
     $("sortBtn").innerHTML = icon("sort") + esc(SORTS[view.sort]);
     $("sortBtn").setAttribute("aria-label", "Sort by " + SORTS[view.sort] + ". Tap to change.");
 
@@ -421,8 +489,27 @@ input:focus, textarea:focus { outline: none; border-color: var(--primary); box-s
         </button>
         <div class="count" aria-hidden="true"><b>${cd[0]}</b><span>${cd[1]}</span></div></div>`;
     }
+    // FLIP: remember where every card was, rebuild, then tween each card from its
+    // old position to its new one. Cards that were not there before spring in.
+    const before = new Map();
+    $("list").querySelectorAll(".card").forEach(c => before.set(c.dataset.id, c.getBoundingClientRect().top + scrollY));
     $("list").innerHTML = html;
-    newId = null;
+    $("list").querySelectorAll(".card").forEach((c, i) => {
+      const old = before.get(c.dataset.id), dy = old === undefined ? 0 : old - (c.getBoundingClientRect().top + scrollY);
+      if (old === undefined)
+        tween(c, SPRING.bouncy, (v, p) => ({ opacity: clamp01(p * 4), transform: `translateY(${24 * (1 - v)}px) scale(${0.94 + 0.06 * v})` }), { delay: shown.first ? stagger(i) : 0 });
+      else if (Math.abs(dy) > 1)
+        tween(c, SPRING.snappy, v => ({ transform: `translateY(${dy * (1 - v)}px)` }));
+      if (c.dataset.id === toggledId) {
+        const check = c.querySelector(".check");
+        tween(check, EASE.outElastic, v => ({ transform: `scale(${0.6 + 0.4 * v})` }), { ms: 700 });
+        if (c.classList.contains("done")) {
+          const ring = check.appendChild(Object.assign(document.createElement("span"), { className: "ripple" }));
+          tween(ring, EASE.outExpo, v => ({ opacity: 0.7 * (1 - v), transform: `scale(${1 + 1.6 * v})` }), { ms: 520 });
+        }
+      }
+    });
+    newId = null; toggledId = null; shown.first = false;
   }
 
   // ---- form ----
@@ -449,9 +536,19 @@ input:focus, textarea:focus { outline: none; border-color: var(--primary); box-s
     $("fError").hidden = true; $("fTitle").classList.remove("invalid");
     renderForm();
     $("scrim").hidden = false; $("fab").hidden = true;
+    // The sheet springs up from below; the dimmed backdrop fades in behind it.
+    tween($("scrim"), EASE.outExpo, v => ({ backgroundColor: `rgba(0, 0, 0, ${0.72 * v})` }), { ms: 300 });
+    tween($("form"), SPRING.snappy, v => ({ transform: `translateY(${(1 - v) * 60}%)`, opacity: clamp01(v * 3) }));
     if (!a) $("fTitle").focus();
   }
-  function closeForm() { $("scrim").hidden = true; $("fab").hidden = false; }
+  function closeForm() {
+    const done = () => { $("scrim").hidden = true; $("fab").hidden = false; tween($("fab"), SPRING.bouncy, v => ({ transform: `scale(${0.6 + 0.4 * v})` })); };
+    // Dips up a touch, then drops away (the "back" curve run forwards).
+    const out = tween($("form"), EASE.inBack, v => ({ transform: `translateY(${v * 60}%)`, opacity: 1 - clamp01(v) }), { ms: 220 });
+    if (!out) return done();
+    tween($("scrim"), p => p, v => ({ backgroundColor: `rgba(0, 0, 0, ${0.72 * (1 - v)})` }), { ms: 220 });
+    out.onfinish = done;
+  }
   function submit() {
     const title = $("fTitle").value.trim();
     if (!title) { $("fError").hidden = false; $("fTitle").classList.add("invalid"); $("fTitle").focus(); return; }
@@ -469,6 +566,7 @@ input:focus, textarea:focus { outline: none; border-color: var(--primary); box-s
     persist(lastRemoved.a, true); render();
     $("toastText").textContent = `Deleted “${lastRemoved.a.title}”`;
     $("toast").hidden = false;
+    tween($("toast"), SPRING.bouncy, v => ({ opacity: clamp01(v * 2), transform: `translateX(-50%) translateY(${40 * (1 - v)}px)` }));
     clearTimeout(remove.timer); remove.timer = setTimeout(() => { $("toast").hidden = true; }, 6000);
   }
 
@@ -484,7 +582,7 @@ input:focus, textarea:focus { outline: none; border-color: var(--primary); box-s
     if (act === "new") openForm(null);
     else if (act === "reset") { view.filter = "all"; view.course = ""; view.search = ""; $("search").value = ""; saveView(); render(); }
     else if (!a) return;
-    else if (act === "toggle") { a.done = !a.done; persist(a); render(); }
+    else if (act === "toggle") { a.done = !a.done; toggledId = a.id; persist(a); render(); }
     else if (act === "edit") openForm(a);
     else if (act === "delete") remove(a.id);
   });

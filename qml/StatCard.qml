@@ -14,7 +14,8 @@ Item {
 
     // Counts up/down instead of snapping when the number changes.
     property real shown: value
-    Behavior on shown { NumberAnimation { duration: 350; easing.type: Easing.OutCubic } }
+    Behavior on shown { NumberAnimation { duration: 700; easing.type: Easing.OutExpo } }
+    onValueChanged: pop.restart()
 
     implicitHeight: 112
 
@@ -51,7 +52,11 @@ Item {
             GradientStop { position: 1; color: Theme.dark ? (card.active || hover.containsMouse ? Theme.surfaceAlt : Theme.surface)
                                                      : Theme.tintOn(Theme.surface, card.tone, card.active ? 0.1 : hover.containsMouse ? 0.08 : 0.03) }
         }
-        transform: Translate { y: hover.containsMouse ? -1 : 0 }
+        // Lifts on hover and sinks when pressed, on a spring
+        transform: Translate {
+            y: hover.pressed ? 1 : hover.containsMouse ? -3 : 0
+            Behavior on y { SpringAnimation { spring: 5; damping: 0.28; epsilon: 0.05 } }
+        }
 
         Behavior on border.color { ColorAnimation { duration: Theme.fast } }
 
@@ -93,8 +98,21 @@ Item {
             anchors.right: parent.right
             anchors.top: parent.top
             anchors.margins: 12
+            id: badge
             width: 34; height: 34; radius: 11
             color: Theme.tint(card.tone, card.active ? 0.28 : 0.15)
+            rotation: card.active ? 360 : 0
+            Behavior on rotation { NumberAnimation { duration: 650; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.overshoot } }
+
+            // The badge jumps when its number changes
+            SequentialAnimation {
+                id: pop
+                NumberAnimation { target: badge; property: "scale"; to: 1.3; duration: 110; easing.type: Easing.OutQuad }
+                NumberAnimation {
+                    target: badge; property: "scale"; to: 1; duration: 620
+                    easing.type: Easing.OutElastic; easing.amplitude: 1.2; easing.period: 0.4
+                }
+            }
             Icon { anchors.centerIn: parent; name: card.iconName; color: card.tone }
         }
     }
