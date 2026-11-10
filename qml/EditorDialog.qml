@@ -90,9 +90,9 @@ Popup {
         radius: 18
         color: Theme.surface
         border.width: 1
-        border.color: Theme.tintOn(Theme.border, Theme.accent, 0.45)
+        border.color: Theme.tintOn(Theme.border, Theme.primary, 0.25)
 
-        Glow { radius: parent.radius; spread: 12; strength: 0.8 }
+        Glow { radius: parent.radius; spread: 12; strength: 0.6 }
     }
 
     component FieldLabel: Text {
@@ -105,7 +105,7 @@ Popup {
         id: chip
         property string label
         property bool active: false
-        property color tone: Theme.accent
+        property color tone: Theme.primary
         signal clicked()
 
         height: 30
@@ -219,7 +219,7 @@ Popup {
                 radius: 10
                 color: Theme.surfaceAlt
                 border.width: dialog.calendarOpen ? 2 : 1
-                border.color: dialog.calendarOpen ? Theme.accent : Theme.border
+                border.color: dialog.calendarOpen ? Theme.primary : Theme.border
 
                 Accessible.role: Accessible.Button
                 Accessible.name: qsTr("Choose due date")
@@ -323,7 +323,7 @@ Popup {
                 radius: 10
                 color: Theme.surfaceAlt
                 border.width: notesArea.activeFocus ? 2 : 1
-                border.color: notesArea.activeFocus ? Theme.accent : Theme.border
+                border.color: notesArea.activeFocus ? Theme.primary : Theme.border
 
                 ScrollView {
                     anchors.fill: parent
@@ -333,7 +333,7 @@ Popup {
                         placeholderText: qsTr("Optional details, links, page numbers…")
                         placeholderTextColor: Theme.textFaint
                         color: Theme.text
-                        selectionColor: Theme.tint(Theme.accent, 0.35)
+                        selectionColor: Theme.tint(Theme.primary, 0.3)
                         selectedTextColor: Theme.text
                         font.pixelSize: 14
                         wrapMode: TextArea.Wrap

@@ -80,15 +80,15 @@ Column {
                 width: Math.min(parent.width, parent.height) - 4
                 height: width
                 radius: width / 2
-                color: cell.selected ? Theme.accent : cellHover.containsMouse ? Theme.border : "transparent"
+                color: cell.selected ? Theme.primary : cellHover.containsMouse ? Theme.border : "transparent"
                 border.width: cell.iso === picker.today && !cell.selected ? 1.5 : 0
-                border.color: Theme.accent
+                border.color: Theme.primary
                 Behavior on color { ColorAnimation { duration: 90 } }
 
                 Text {
                     anchors.centerIn: parent
                     text: cell.model.day
-                    color: cell.selected ? Theme.onAccent : Theme.text
+                    color: cell.selected ? Theme.onPrimary : Theme.text
                     opacity: cell.inMonth || cell.selected ? 1 : 0.3
                     font.pixelSize: 13
                     font.weight: cell.selected || cell.iso === picker.today ? Font.Bold : Font.Normal

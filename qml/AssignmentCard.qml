@@ -25,12 +25,12 @@ Rectangle {
     radius: 16
     color: hover.hovered ? Theme.tintOn(Theme.surface, Theme.surfaceAlt, 0.6) : Theme.surface
     border.width: 1
-    border.color: hover.hovered ? Theme.tint(statusTone, 0.75) : Theme.tintOn(Theme.border, statusTone, 0.3)
+    border.color: hover.hovered ? Theme.tint(statusTone, 0.75) : Theme.tintOn(Theme.border, statusTone, 0.12)
 
     Glow {
         color: card.statusTone
         radius: card.radius
-        strength: hover.hovered ? 1 : card.done ? 0.2 : 0.45
+        strength: hover.hovered ? 1 : 0.15
     }
 
     // Soft drop shadow, drawn behind the card
@@ -42,21 +42,6 @@ Rectangle {
         radius: parent.radius
         color: Theme.shadow
     }
-
-    // Status strip
-    Rectangle {
-        anchors.left: parent.left
-        anchors.verticalCenter: parent.verticalCenter
-        width: 4
-        height: parent.height - 28
-        radius: 2
-        color: card.statusTone
-        opacity: card.done ? 0.45 : 1
-        Behavior on color { ColorAnimation { duration: Theme.normal } }
-    }
-
-    Behavior on color { ColorAnimation { duration: Theme.fast } }
-    Behavior on border.color { ColorAnimation { duration: Theme.fast } }
 
     // MouseAreas (not TapHandlers) so a click on the checkbox or a button is
     // consumed there and does not also open the editor.
@@ -71,7 +56,7 @@ Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
-        anchors.leftMargin: 18
+        anchors.leftMargin: 16
         anchors.rightMargin: 10
         spacing: 14
 
@@ -143,14 +128,14 @@ Rectangle {
                     height: 24
                     width: Math.min(courseText.implicitWidth + 18, 200)
                     radius: 12
-                    color: Theme.tint(Theme.accent, 0.13)
+                    color: Theme.tint(Theme.text, 0.08)
                     Text {
                         id: courseText
                         anchors.centerIn: parent
                         width: Math.min(implicitWidth, parent.width - 16)
                         text: card.course
                         elide: Text.ElideRight
-                        color: Theme.accent
+                        color: Theme.text
                         font.pixelSize: 12
                         font.weight: Font.DemiBold
                     }

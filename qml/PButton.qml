@@ -1,13 +1,13 @@
 import QtQuick
 import QtQuick.Controls
 
-// kind: "primary" (filled accent), "soft" (tinted), "ghost" (transparent)
+// kind: "primary" (filled), "soft" (tinted), "ghost" (transparent)
 AbstractButton {
     id: control
 
     property string kind: "ghost"
     property string iconName: ""
-    property color tone: kind === "primary" ? Theme.onAccent : Theme.text
+    property color tone: kind === "primary" ? Theme.onPrimary : Theme.text
     property string tip: ""
 
     implicitHeight: 38
@@ -43,13 +43,13 @@ AbstractButton {
         radius: 10
         color: {
             if (control.kind === "primary")
-                return control.hovered ? Qt.lighter(Theme.accent, 1.1) : Theme.accent
+                return control.hovered ? Theme.tintOn(Theme.primary, Theme.onPrimary, 0.12) : Theme.primary
             if (control.kind === "soft")
                 return Theme.tint(control.tone, control.hovered ? 0.2 : 0.12)
             return control.down ? Theme.border : control.hovered ? Theme.surfaceAlt : "transparent"
         }
         border.width: control.visualFocus ? 2 : 0
-        border.color: control.kind === "primary" ? Theme.text : Theme.accent
+        border.color: control.kind === "primary" ? Theme.textMuted : Theme.primary
         opacity: control.enabled ? 1 : 0.45
 
         Glow {

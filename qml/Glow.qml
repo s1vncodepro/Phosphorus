@@ -6,7 +6,7 @@ import QtQuick
 Item {
     id: glow
 
-    property color color: Theme.accent
+    property color color: Theme.primary
     property real radius: 0
     property int spread: 7
     property real strength: 0.5   // 0 = off, 1 = full
@@ -28,7 +28,7 @@ Item {
             radius: glow.radius + index + 1
             color: "transparent"
             border.width: 2   // overlaps the next ring so corners have no gaps
-            border.color: Theme.tint(glow.color, glow.strength * falloff * falloff * (Theme.dark ? 0.22 : 0.16))
+            border.color: Theme.tint(glow.color, glow.strength * falloff * falloff * (Theme.dark ? 0.13 : 0.16))
         }
     }
 }

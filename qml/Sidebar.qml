@@ -4,7 +4,7 @@ import QtQuick.Layouts
 Rectangle {
     id: sidebar
 
-    color: Theme.surface
+    color: Theme.dark ? Theme.bg : Theme.surface
     Behavior on color { ColorAnimation { duration: Theme.normal } }
 
     readonly property var filters: [
@@ -56,7 +56,7 @@ Rectangle {
                 Layout.fillWidth: true
                 height: 42
                 radius: 12
-                color: active ? Theme.tint(Theme.accent, 0.14) : hover.containsMouse ? Theme.surfaceAlt : "transparent"
+                color: active ? Theme.tint(Theme.primary, Theme.dark ? 0.09 : 0.14) : hover.containsMouse ? Theme.surfaceAlt : "transparent"
                 Behavior on color { ColorAnimation { duration: Theme.fast } }
 
                 Accessible.role: Accessible.Button
@@ -69,7 +69,7 @@ Rectangle {
                     anchors.verticalCenter: parent.verticalCenter
                     size: 17
                     name: item.modelData.icon
-                    color: item.active ? Theme.accent : item.modelData.tone
+                    color: item.active ? Theme.text : item.modelData.tone
                 }
                 Text {
                     anchors.left: dot.right
@@ -89,7 +89,7 @@ Rectangle {
                     anchors.rightMargin: 12
                     anchors.verticalCenter: parent.verticalCenter
                     text: item.modelData.count
-                    color: item.active ? Theme.accent : Theme.textFaint
+                    color: item.active ? Theme.text : Theme.textFaint
                     font.pixelSize: 13
                     font.weight: Font.DemiBold
                 }

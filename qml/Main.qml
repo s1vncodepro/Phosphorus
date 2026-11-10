@@ -54,12 +54,12 @@ ApplicationWindow {
         onRemoveRequested: uid => window.removeAssignment(uid)
     }
 
-    // Soft accent glow behind the header
+    // Soft accent wash behind the header (light theme only; matte black stays flat)
     Rectangle {
         width: parent.width
         height: 320
         gradient: Gradient {
-            GradientStop { position: 0; color: Theme.tintOn(Theme.bg, Theme.accent, Theme.dark ? 0.09 : 0.1) }
+            GradientStop { position: 0; color: Theme.tintOn(Theme.bg, Theme.accent, Theme.dark ? 0 : 0.1) }
             GradientStop { position: 1; color: Theme.bg }
         }
     }
@@ -223,9 +223,9 @@ ApplicationWindow {
                     height: 32
                     width: chipLabel.implicitWidth + 26
                     radius: 16
-                    color: active ? Theme.accent : chipHover.containsMouse ? Theme.surfaceAlt : Theme.surface
+                    color: active ? Theme.primary : chipHover.containsMouse ? Theme.surfaceAlt : Theme.surface
                     border.width: 1
-                    border.color: active ? Theme.accent : Theme.border
+                    border.color: active ? Theme.primary : Theme.border
                     Behavior on color { ColorAnimation { duration: Theme.fast } }
 
                     Accessible.role: Accessible.Button
@@ -235,7 +235,7 @@ ApplicationWindow {
                         id: chipLabel
                         anchors.centerIn: parent
                         text: chip.modelData.length > 0 ? chip.modelData : qsTr("All courses")
-                        color: chip.active ? Theme.onAccent : Theme.textMuted
+                        color: chip.active ? Theme.onPrimary : Theme.textMuted
                         font.pixelSize: 13
                         font.weight: Font.DemiBold
                     }
@@ -374,7 +374,7 @@ ApplicationWindow {
                     PButton {
                         anchors.horizontalCenter: parent.horizontalCenter
                         kind: store.total === 0 ? "primary" : "soft"
-                        tone: store.total === 0 ? Theme.onAccent : Theme.accent
+                        tone: store.total === 0 ? Theme.onPrimary : Theme.primary
                         iconName: store.total === 0 ? "plus" : ""
                         text: store.total === 0 ? qsTr("Add assignment") : qsTr("Show everything")
                         onClicked: {

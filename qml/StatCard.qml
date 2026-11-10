@@ -37,16 +37,18 @@ Item {
         radius: 16
         border.width: 1
         border.color: card.active ? Theme.tint(card.tone, 0.85)
-                    : Theme.tintOn(Theme.border, card.tone, hover.containsMouse ? 0.7 : 0.3)
+                    : Theme.tintOn(Theme.border, card.tone, hover.containsMouse ? 0.6 : 0.12)
 
         Glow {
             color: card.tone
             radius: face.radius
-            strength: card.active ? 1 : hover.containsMouse ? 0.8 : 0.4
+            strength: card.active ? 1 : hover.containsMouse ? 0.7 : 0.2
         }
         gradient: Gradient {
-            GradientStop { position: 0; color: card.active ? Theme.tintOn(Theme.surface, card.tone, 0.2) : Theme.surface }
-            GradientStop { position: 1; color: Theme.tintOn(Theme.surface, card.tone, card.active ? 0.1 : hover.containsMouse ? 0.08 : 0.03) }
+            GradientStop { position: 0; color: Theme.dark ? (card.active ? Theme.surfaceAlt : Theme.surface)
+                                                     : card.active ? Theme.tintOn(Theme.surface, card.tone, 0.2) : Theme.surface }
+            GradientStop { position: 1; color: Theme.dark ? (card.active || hover.containsMouse ? Theme.surfaceAlt : Theme.surface)
+                                                     : Theme.tintOn(Theme.surface, card.tone, card.active ? 0.1 : hover.containsMouse ? 0.08 : 0.03) }
         }
         transform: Translate { y: hover.containsMouse ? -1 : 0 }
 
