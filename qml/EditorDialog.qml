@@ -90,7 +90,9 @@ Popup {
         radius: 18
         color: Theme.surface
         border.width: 1
-        border.color: Theme.border
+        border.color: Theme.tintOn(Theme.border, Theme.accent, 0.45)
+
+        Glow { radius: parent.radius; spread: 12; strength: 0.8 }
     }
 
     component FieldLabel: Text {

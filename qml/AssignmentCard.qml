@@ -25,11 +25,17 @@ Rectangle {
     radius: 16
     color: hover.hovered ? Theme.tintOn(Theme.surface, Theme.surfaceAlt, 0.6) : Theme.surface
     border.width: 1
-    border.color: hover.hovered ? Theme.tint(statusTone, 0.5) : Theme.border
+    border.color: hover.hovered ? Theme.tint(statusTone, 0.75) : Theme.tintOn(Theme.border, statusTone, 0.3)
+
+    Glow {
+        color: card.statusTone
+        radius: card.radius
+        strength: hover.hovered ? 1 : card.done ? 0.2 : 0.45
+    }
 
     // Soft drop shadow, drawn behind the card
     Rectangle {
-        z: -1
+        z: -2
         anchors.fill: parent
         anchors.topMargin: 3
         anchors.bottomMargin: -3

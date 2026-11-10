@@ -256,7 +256,13 @@ ApplicationWindow {
 
                 ListView {
                     id: list
+                    // Wider than its slot, with the cards inset to match, so the
+                    // glow around each card is not clipped at the list's edges.
+                    readonly property int bleed: 10
                     anchors.fill: parent
+                    anchors.leftMargin: -bleed
+                    anchors.rightMargin: -bleed
+                    topMargin: 4
                     model: assignments
                     spacing: 10
                     clip: true
@@ -275,7 +281,7 @@ ApplicationWindow {
 
                         Row {
                             anchors.left: parent.left
-                            anchors.leftMargin: 4
+                            anchors.leftMargin: list.bleed + 4
                             anchors.bottom: parent.bottom
                             anchors.bottomMargin: 8
                             spacing: 8
@@ -296,7 +302,8 @@ ApplicationWindow {
                     }
 
                     delegate: AssignmentCard {
-                        width: list.width
+                        x: list.bleed
+                        width: list.width - 2 * list.bleed
                         compact: window.compact
                         onEditRequested: uid => editor.openEdit(uid)
                         onRemoveRequested: uid => window.removeAssignment(uid)

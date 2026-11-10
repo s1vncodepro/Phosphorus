@@ -52,6 +52,12 @@ AbstractButton {
         border.color: control.kind === "primary" ? Theme.text : Theme.accent
         opacity: control.enabled ? 1 : 0.45
 
+        Glow {
+            visible: control.kind === "primary"
+            radius: parent.radius
+            strength: control.hovered ? 1 : 0.55
+        }
+
         Behavior on color { ColorAnimation { duration: Theme.fast } }
     }
 

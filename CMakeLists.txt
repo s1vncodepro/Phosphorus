@@ -21,7 +21,7 @@ qt_add_executable(phosphorus WIN32 MACOSX_BUNDLE
 )
 
 set(PHOSPHORUS_QML
-    Main Theme Icon PButton PTextField Sidebar StatCard AssignmentCard EditorDialog DatePicker)
+    Main Theme Icon Glow PButton PTextField Sidebar StatCard AssignmentCard EditorDialog DatePicker)
 set(PHOSPHORUS_QML_FILES)
 foreach(name IN LISTS PHOSPHORUS_QML)
     # Alias each file to the module root so it sits next to the generated qmldir;

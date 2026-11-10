@@ -24,5 +24,11 @@ TextField {
                     : control.activeFocus ? Theme.accent : Theme.border
 
         Behavior on border.color { ColorAnimation { duration: Theme.fast } }
+
+        Glow {
+            color: control.invalid ? Theme.danger : Theme.accent
+            radius: parent.radius
+            strength: control.activeFocus ? 0.9 : 0
+        }
     }
 }
