@@ -1,0 +1,493 @@
+<title>Phosphorus</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap">
+<style>
+/* Layout: one phone-width column — header, four filter tiles, search, course chips,
+   then the list grouped by urgency. The add/edit form is a bottom sheet. */
+:root {
+  --bg: #F3F4F7; --surface: #FFFFFF; --surface-alt: #ECEEF2; --border: #DFE2E8;
+  --text: #14171C; --muted: #5F6878; --faint: #99A1AF;
+  --accent: #0C9467; --on-accent: #FFFFFF;
+  --danger: #D43B30; --warn: #B86E00; --info: #2877CC;
+  --glow: 0.16; --shadow: 0 3px 0 rgba(26, 33, 51, 0.05);
+  --font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --display: "Space Grotesk", "Inter", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0D0F13; --surface: #15181E; --surface-alt: #1C2028; --border: #252A34;
+    --text: #EDEFF3; --muted: #8D95A5; --faint: #5C6474;
+    --accent: #3DDC97; --on-accent: #06281B;
+    --danger: #FF6B6B; --warn: #FFB454; --info: #6CB2FF;
+    --glow: 0.24; --shadow: 0 3px 0 rgba(0, 0, 0, 0.35);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0D0F13; --surface: #15181E; --surface-alt: #1C2028; --border: #252A34;
+  --text: #EDEFF3; --muted: #8D95A5; --faint: #5C6474;
+  --accent: #3DDC97; --on-accent: #06281B;
+  --danger: #FF6B6B; --warn: #FFB454; --info: #6CB2FF;
+  --glow: 0.24; --shadow: 0 3px 0 rgba(0, 0, 0, 0.35);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--text);
+  font: 15px/1.45 var(--font);
+  padding-block: 20px 110px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background-image: linear-gradient(color-mix(in srgb, var(--accent) 10%, var(--bg)), var(--bg) 300px);
+  background-repeat: no-repeat;
+  -webkit-tap-highlight-color: transparent;
+}
+main { max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+button { font: inherit; color: inherit; cursor: pointer; border: 0; background: none; padding: 0; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+svg.i { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+/* tone helpers: an element sets --tone, glow and tints derive from it */
+.t-accent { --tone: var(--accent); } .t-info { --tone: var(--info); }
+.t-danger { --tone: var(--danger); } .t-warn { --tone: var(--warn); } .t-muted { --tone: var(--faint); }
+.glow { box-shadow: var(--shadow), 0 0 0 1px color-mix(in srgb, var(--tone) calc(var(--glow) * 100%), transparent), 0 0 14px color-mix(in srgb, var(--tone) calc(var(--glow) * var(--g, 0.5) * 100%), transparent); }
+
+header { display: flex; align-items: center; gap: 12px; }
+header .mark { width: 34px; height: 34px; border-radius: 10px; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; }
+header h1 { font: 700 24px/1.1 var(--display); margin: 0; text-wrap: balance; }
+header p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+header .grow { flex: 1; min-width: 0; }
+.ring { position: relative; width: 46px; height: 46px; flex: none; }
+.ring svg { width: 46px; height: 46px; transform: rotate(-90deg); }
+.ring circle { fill: none; stroke-width: 5; stroke: var(--border); }
+.ring circle.fill { stroke: var(--accent); stroke-linecap: round; transition: stroke-dashoffset .5s ease; }
+.ring span { position: absolute; inset: 0; display: grid; place-items: center; font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.banner { border-radius: 12px; padding: 10px 14px; font-size: 13px; background: color-mix(in srgb, var(--warn) 14%, var(--surface)); border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--border)); }
+
+.tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (min-width: 620px) { .tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.tile {
+  --g: 0.4; text-align: left; position: relative; padding: 12px 14px; border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--tone) 30%, var(--border));
+  background: linear-gradient(var(--surface), color-mix(in srgb, var(--tone) 4%, var(--surface)));
+  transition: box-shadow .2s, border-color .2s, background .2s;
+}
+.tile[aria-pressed="true"] { --g: 1; border-color: var(--tone); background: linear-gradient(color-mix(in srgb, var(--tone) 20%, var(--surface)), color-mix(in srgb, var(--tone) 10%, var(--surface))); }
+.tile .label { display: block; color: var(--muted); font-size: 13px; font-weight: 500; padding-right: 36px; }
+.tile .num { display: block; font: 700 28px/1.2 var(--display); font-variant-numeric: tabular-nums; margin-top: 6px; }
+.tile .badge { position: absolute; top: 10px; right: 10px; width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; color: var(--tone); background: color-mix(in srgb, var(--tone) 16%, transparent); }
+
+.tools { display: flex; gap: 8px; }
+.search { flex: 1; min-width: 0; position: relative; color: var(--faint); }
+.search svg { position: absolute; left: 12px; top: 13px; }
+input, textarea, select {
+  font: 16px var(--font); color: var(--text); background: var(--surface-alt);
+  border: 1px solid var(--border); border-radius: 12px; padding: 10px 12px; width: 100%; min-width: 0;
+  transition: box-shadow .15s, border-color .15s;
+}
+input::placeholder, textarea::placeholder { color: var(--faint); }
+input:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 14px color-mix(in srgb, var(--accent) 30%, transparent); }
+.search input { padding-left: 38px; height: 44px; }
+.btn { height: 44px; padding: 0 14px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-weight: 600; font-size: 14px; color: var(--muted); white-space: nowrap; }
+.btn:hover { background: var(--surface-alt); }
+.btn.primary { --tone: var(--accent); --g: 0.8; background: var(--accent); color: var(--on-accent); }
+.btn.danger { color: var(--danger); background: color-mix(in srgb, var(--danger) 13%, transparent); }
+
+.chips { flex: none; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-inline: -4px; padding: 2px 4px; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { flex: none; height: 32px; padding: 0 14px; border-radius: 16px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); font-size: 13px; font-weight: 600; }
+.chip[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.chip.t-tone[aria-pressed="true"] { background: color-mix(in srgb, var(--tone) 18%, var(--surface)); border-color: var(--tone); color: var(--tone); }
+
+#list { display: flex; flex-direction: column; gap: 10px; }
+.section { display: flex; align-items: center; gap: 8px; margin: 10px 4px 0; font-size: 12px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.section::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--tone); }
+.card {
+  --g: 0.45; display: flex; gap: 12px; align-items: flex-start; padding: 14px 8px 14px 14px; border-radius: 16px;
+  background: var(--surface); border: 1px solid color-mix(in srgb, var(--tone) 30%, var(--border));
+  transition: box-shadow .2s, border-color .2s;
+}
+.card:hover { --g: 1; border-color: color-mix(in srgb, var(--tone) 75%, var(--border)); }
+.card.done { --g: 0.2; }
+.card.new { animation: pop .25s ease-out; }
+@keyframes pop { from { opacity: 0; transform: scale(.96); } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+.check { flex: none; width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--faint); display: grid; place-items: center; color: transparent; transition: background .15s, border-color .15s; }
+.check svg { width: 15px; height: 15px; stroke-width: 3; }
+.done .check { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.card .body { flex: 1; min-width: 0; text-align: left; display: flex; flex-direction: column; gap: 6px; }
+.card .title { font-weight: 600; font-size: 15px; overflow-wrap: anywhere; }
+.done .title { text-decoration: line-through; color: var(--muted); }
+.pills { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; }
+.pill { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; color: var(--tone); background: color-mix(in srgb, var(--tone) 13%, transparent); max-width: 100%; overflow-wrap: anywhere; }
+.pill svg { width: 13px; height: 13px; }
+.prio { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: var(--muted); }
+.prio::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--tone); }
+.card .notes { color: var(--muted); font-size: 13px; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.card .del { flex: none; width: 40px; height: 40px; border-radius: 10px; display: grid; place-items: center; color: var(--danger); }
+.card .del:hover { background: color-mix(in srgb, var(--danger) 12%, transparent); }
+
+.empty { text-align: center; padding: 48px 16px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.empty .blob { width: 56px; height: 56px; border-radius: 18px; display: grid; place-items: center; color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.empty .blob svg { width: 26px; height: 26px; }
+.empty h2 { font: 700 18px var(--display); margin: 6px 0 0; }
+.empty p { margin: 0 0 8px; color: var(--muted); max-width: 32ch; }
+
+.fab {
+  --tone: var(--accent); --g: 1; position: fixed; z-index: 5;
+  right: calc(18px + env(safe-area-inset-right, 0px)); bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+  height: 54px; padding: 0 20px 0 16px; border-radius: 27px; background: var(--accent); color: var(--on-accent);
+  display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 15px;
+}
+.fab:active, .btn:active, .tile:active { transform: scale(.97); }
+
+.scrim { position: fixed; inset: 0; z-index: 20; background: rgba(0, 0, 0, .55); display: flex; align-items: flex-end; justify-content: center; }
+.sheet {
+  --tone: var(--accent); --g: 0.8; width: 100%; max-width: 480px; max-height: 92%; overflow-y: auto;
+  background: var(--surface); border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border)); border-bottom: 0;
+  border-radius: 20px 20px 0 0; padding: 20px;
+  padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px));
+  padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  display: flex; flex-direction: column; gap: 8px; animation: rise .22s ease-out;
+}
+@keyframes rise { from { transform: translateY(40px); opacity: 0; } }
+@media (min-width: 620px) { .scrim { align-items: center; } .sheet { border-radius: 20px; border-bottom: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border)); } }
+.sheet h2 { font: 700 19px var(--display); margin: 0; flex: 1; }
+.sheet .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sheet label { font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin-top: 8px; }
+.sheet textarea { resize: vertical; min-height: 76px; }
+.sheet .error { color: var(--danger); font-size: 12px; }
+.sheet input.invalid { border-color: var(--danger); }
+.sheet .actions { margin-top: 14px; }
+.sheet .actions .spacer { flex: 1; }
+
+.toast {
+  position: fixed; z-index: 30; left: 50%; transform: translateX(-50%);
+  bottom: calc(88px + env(safe-area-inset-bottom, 0px)); max-width: calc(100% - 32px);
+  background: #1D2129; color: #EDEFF3; border-radius: 12px; padding: 6px 6px 6px 16px;
+  display: flex; align-items: center; gap: 8px; font-size: 14px; box-shadow: 0 6px 24px rgba(0, 0, 0, .3);
+}
+.toast span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.toast button { color: #3DDC97; font-weight: 700; height: 36px; padding: 0 12px; border-radius: 8px; flex: none; }
+</style>
+
+<main>
+  <header>
+    <div class="mark"><svg class="i" viewBox="0 0 24 24" style="stroke-width:2.6"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
+    <div class="grow">
+      <h1 id="heading">All assignments</h1>
+      <p id="subhead"></p>
+    </div>
+    <div class="ring" id="ring" hidden>
+      <svg viewBox="0 0 46 46"><circle cx="23" cy="23" r="19"/><circle class="fill" id="ringFill" cx="23" cy="23" r="19" stroke-dasharray="119.4" stroke-dashoffset="119.4"/></svg>
+      <span id="ringText">0%</span>
+    </div>
+  </header>
+
+  <div class="banner" id="banner" hidden></div>
+
+  <div class="tiles" id="tiles"></div>
+
+  <div class="tools">
+    <div class="search">
+      <svg class="i" viewBox="0 0 24 24"><path d="M4.5 10.5a6 6 0 1 0 12 0a6 6 0 1 0 -12 0M15 15l4.5 4.5"/></svg>
+      <input id="search" type="search" placeholder="Search assignments" autocomplete="off" aria-label="Search assignments">
+    </div>
+    <button class="btn" id="sortBtn" type="button"></button>
+  </div>
+
+  <div class="chips" id="courses" hidden></div>
+
+  <div id="list" aria-live="polite"></div>
+</main>
+
+<button class="fab glow" id="fab" type="button"><svg class="i" viewBox="0 0 24 24" style="stroke-width:2.4"><path d="M12 5v14M5 12h14"/></svg>New</button>
+
+<div class="scrim" id="scrim" hidden>
+  <form class="sheet glow" id="form" novalidate>
+    <div class="row">
+      <h2 id="formTitle">New assignment</h2>
+      <button class="btn" type="button" id="closeBtn" aria-label="Close"><svg class="i" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></svg></button>
+    </div>
+    <label for="fTitle">Title</label>
+    <input id="fTitle" maxlength="140" placeholder="e.g. Chapter 4 problem set" autocomplete="off">
+    <div class="error" id="fError" hidden>Give the assignment a title.</div>
+    <label for="fCourse">Course</label>
+    <input id="fCourse" maxlength="60" placeholder="Optional, e.g. Biology" autocomplete="off">
+    <div class="chips" id="fCourses"></div>
+    <label for="fDue">Due date</label>
+    <input id="fDue" type="date">
+    <div class="chips" id="fQuick"></div>
+    <label id="fPrioLabel">Priority</label>
+    <div class="chips" id="fPrio" role="group" aria-labelledby="fPrioLabel"></div>
+    <label for="fNotes">Notes</label>
+    <textarea id="fNotes" maxlength="2000" placeholder="Optional details, links, page numbers…"></textarea>
+    <div class="row actions">
+      <button class="btn danger" type="button" id="deleteBtn" hidden>Delete</button>
+      <span class="spacer"></span>
+      <button class="btn" type="button" id="cancelBtn">Cancel</button>
+      <button class="btn primary glow" type="submit" id="saveBtn">Add assignment</button>
+    </div>
+  </form>
+</div>
+
+<div class="toast" id="toast" hidden><span id="toastText"></span><button type="button" id="undoBtn">Undo</button></div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const ICONS = {
+    check: "M5 12.5l4.5 4.5L19 7.5",
+    calendar: "M6 5.5h12a2 2 0 0 1 2 2v10a2 2 0 0 1 -2 2H6a2 2 0 0 1 -2 -2v-10a2 2 0 0 1 2 -2M4 10h16M8.5 3.5v4M15.5 3.5v4",
+    trash: "M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 12.5h9l1-12.5M10.2 10.5v5.5M13.8 10.5v5.5",
+    circle: "M3.5 12a8.5 8.5 0 1 0 17 0a8.5 8.5 0 1 0 -17 0",
+    clock: "M3.5 12a8.5 8.5 0 1 0 17 0a8.5 8.5 0 1 0 -17 0M12 7.5V12l3 2",
+    alert: "M12 4.5L20.5 19h-17zM12 10.5v4M12 16.6h.01",
+    done: "M3.5 12a8.5 8.5 0 1 0 17 0a8.5 8.5 0 1 0 -17 0M8.3 12.3l2.6 2.6l4.8-5.2",
+    sort: "M5 7h14M7.5 12h9M10 17h4",
+    search: "M4.5 10.5a6 6 0 1 0 12 0a6 6 0 1 0 -12 0M15 15l4.5 4.5",
+    plus: "M12 5v14M5 12h14"
+  };
+  const icon = n => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="${ICONS[n]}"/></svg>`;
+
+  // ---- dates (ISO yyyy-mm-dd strings, always local time) ----
+  const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const parse = s => { const [y, m, d] = s.split("-").map(Number); return new Date(y, m - 1, d); };
+  const today = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
+  const addDays = n => { const d = today(); d.setDate(d.getDate() + n); return iso(d); };
+  const daysLeft = a => Math.round((parse(a.due) - today()) / 86400000);
+  const statusOf = a => {
+    if (a.done) return "done";
+    if (!a.due) return "none";
+    const n = daysLeft(a);
+    return n < 0 ? "overdue" : n === 0 ? "today" : n <= 7 ? "soon" : "later";
+  };
+  const dueLabel = a => {
+    if (a.done) return "Completed";
+    if (!a.due) return "No due date";
+    const n = daysLeft(a);
+    const when = n < -1 ? `${-n} days overdue` : n === -1 ? "1 day overdue" : n === 0 ? "Due today" : n === 1 ? "Due tomorrow" : `Due in ${n} days`;
+    return `${when} · ${parse(a.due).toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })}`;
+  };
+  const TONE = { overdue: "t-danger", today: "t-warn", soon: "t-info", later: "t-muted", none: "t-muted", done: "t-accent" };
+  const SECTION = { overdue: "Overdue", today: "Today", soon: "Next 7 days", later: "Later", none: "No due date", done: "Completed" };
+  const PRIO = [["Low", "t-info"], ["Medium", "t-warn"], ["High", "t-danger"]];
+  const FILTERS = [
+    { key: "active", label: "To do", icon: "circle", tone: "t-accent", test: s => s !== "done" },
+    { key: "week", label: "Due this week", icon: "clock", tone: "t-info", test: s => s === "today" || s === "soon" },
+    { key: "overdue", label: "Overdue", icon: "alert", tone: "t-danger", test: s => s === "overdue" },
+    { key: "done", label: "Completed", icon: "done", tone: "t-muted", test: s => s === "done" }
+  ];
+  const SORTS = { due: "Due date", priority: "Priority", title: "Title" };
+
+  // ---- state ----
+  let items = [];
+  let loaded = false;
+  let lastRemoved = null;
+  let newId = null;
+  const view = { filter: "all", course: "", search: "", sort: "due" };
+  try { Object.assign(view, JSON.parse(localStorage.getItem("phosphorus.view") || "{}"), { search: "" }); } catch (e) {}
+  const saveView = () => { try { localStorage.setItem("phosphorus.view", JSON.stringify({ filter: view.filter, sort: view.sort })); } catch (e) {} };
+
+  // ---- storage: the artifact's private per-person store when available, else this browser ----
+  const LOCAL_KEY = "phosphorus.assignments";
+  let col = null;             // db collection for this person, when connected
+  let chain = Promise.resolve();
+  const warn = text => { $("banner").textContent = text; $("banner").hidden = !text; };
+  const readLocal = () => { try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || "[]"); } catch (e) { return []; } };
+  const writeLocal = () => { try { localStorage.setItem(LOCAL_KEY, JSON.stringify(items)); return true; } catch (e) { return false; } };
+  const timeout = (p, ms) => Promise.race([p, new Promise((_, no) => setTimeout(() => no(new Error("timeout")), ms))]);
+
+  async function load() {
+    try {
+      if (window.claude && window.claude.use) {
+        const [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+        if (db && user) {
+          const uid = await user.id();
+          const c = db.collection("data/users/" + uid);
+          const snap = await timeout(c.get(), 10000);
+          items = snap.docs.map(d => Object.assign({}, d.data(), { id: d.id }));
+          col = c;
+        }
+      }
+    } catch (e) {
+      warn("Couldn't reach your saved assignments. Reload to try again; anything added now is kept on this device only.");
+    }
+    if (!col) items = readLocal();
+    loaded = true;
+    render();
+  }
+  function persist(a, removed) {
+    if (!col) {
+      if (!writeLocal()) warn("This browser is not allowing the page to save, so changes will be lost when it closes.");
+      return;
+    }
+    const { id, ...data } = a;
+    chain = chain.then(() => removed ? col.doc(id).delete() : col.doc(id).set(data))
+      .catch(() => warn("A change could not be saved. Check your connection and reload."));
+  }
+  const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2)).replace(/-/g, "");
+
+  // ---- derived ----
+  const courses = () => { const seen = new Map(); items.forEach(a => { if (a.course && !seen.has(a.course.toLowerCase())) seen.set(a.course.toLowerCase(), a.course); }); return [...seen.values()].sort((x, y) => x.localeCompare(y)); };
+  function visible() {
+    const f = FILTERS.find(x => x.key === view.filter);
+    const q = view.search.trim().toLowerCase();
+    const out = items.filter(a => (!f || f.test(statusOf(a)))
+      && (!view.course || (a.course || "").toLowerCase() === view.course.toLowerCase())
+      && (!q || [a.title, a.course, a.notes].some(t => (t || "").toLowerCase().includes(q))));
+    const byDue = (a, b) => (!a.due !== !b.due) ? (a.due ? -1 : 1) : (a.due || "").localeCompare(b.due || "");
+    const byPrio = (a, b) => b.priority - a.priority;
+    const byTitle = (a, b) => a.title.localeCompare(b.title);
+    const order = { due: [byDue, byPrio, byTitle], priority: [byPrio, byDue, byTitle], title: [byTitle, byDue] }[view.sort];
+    return out.sort((a, b) => { if (a.done !== b.done) return a.done ? 1 : -1; for (const cmp of order) { const r = cmp(a, b); if (r) return r; } return 0; });
+  }
+
+  // ---- render ----
+  function render() {
+    if (view.course && !courses().some(c => c.toLowerCase() === view.course.toLowerCase())) view.course = "";
+    const statuses = items.map(statusOf);
+    const done = statuses.filter(s => s === "done").length;
+    const f = FILTERS.find(x => x.key === view.filter);
+    $("heading").textContent = f ? f.label : "All assignments";
+    const todo = items.length - done;
+    $("subhead").textContent = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }) + (loaded ? ` · ${todo} to do` : "");
+    $("ring").hidden = items.length === 0;
+    const frac = items.length ? done / items.length : 0;
+    $("ringFill").style.strokeDashoffset = 119.4 * (1 - frac);
+    $("ringText").textContent = Math.round(frac * 100) + "%";
+
+    $("tiles").innerHTML = FILTERS.map(x => `<button type="button" class="tile glow ${x.tone}" data-filter="${x.key}" aria-pressed="${view.filter === x.key}">
+      <span class="label">${x.label}</span><span class="num">${statuses.filter(x.test).length}</span><span class="badge">${icon(x.icon)}</span></button>`).join("");
+    $("sortBtn").innerHTML = icon("sort") + esc(SORTS[view.sort]);
+    $("sortBtn").setAttribute("aria-label", "Sort by " + SORTS[view.sort] + ". Tap to change.");
+
+    const cs = courses();
+    $("courses").hidden = cs.length === 0;
+    $("courses").innerHTML = [""].concat(cs).map(c => `<button type="button" class="chip" data-course="${esc(c)}" aria-pressed="${view.course.toLowerCase() === c.toLowerCase()}">${c ? esc(c) : "All courses"}</button>`).join("");
+
+    const list = visible();
+    if (!loaded) { $("list").innerHTML = `<div class="empty"><p>Loading your assignments…</p></div>`; return; }
+    if (list.length === 0) {
+      const fresh = items.length === 0;
+      $("list").innerHTML = `<div class="empty"><div class="blob">${icon(fresh ? "check" : "search")}</div>
+        <h2>${fresh ? "No assignments yet" : "Nothing matches"}</h2>
+        <p>${fresh ? "Add your first assignment to start tracking what is due and when." : "No assignments fit the current filter or search."}</p>
+        <button type="button" class="btn primary glow" data-act="${fresh ? "new" : "reset"}">${fresh ? icon("plus") + "Add assignment" : "Show everything"}</button></div>`;
+      return;
+    }
+    let html = "", last = null;
+    for (const a of list) {
+      const s = statusOf(a);
+      if (view.sort === "due" && s !== last) { html += `<div class="section ${TONE[s]}">${SECTION[s]}</div>`; last = s; }
+      const p = PRIO[a.priority] || PRIO[1];
+      html += `<div class="card glow ${TONE[s]} ${a.done ? "done" : ""} ${a.id === newId ? "new" : ""}" data-id="${a.id}">
+        <button type="button" class="check" data-act="toggle" role="checkbox" aria-checked="${a.done}" aria-label="Mark ${esc(a.title)} as done">${icon("check")}</button>
+        <button type="button" class="body" data-act="edit">
+          <span class="title">${esc(a.title)}</span>
+          <span class="pills">${a.course ? `<span class="pill t-accent">${esc(a.course)}</span>` : ""}
+            <span class="pill">${icon(a.done ? "check" : "calendar")}${esc(dueLabel(a))}</span>
+            ${a.done ? "" : `<span class="prio ${p[1]}">${p[0]}</span>`}</span>
+          ${a.notes ? `<span class="notes">${esc(a.notes)}</span>` : ""}
+        </button>
+        <button type="button" class="del" data-act="delete" aria-label="Delete ${esc(a.title)}">${icon("trash")}</button></div>`;
+    }
+    $("list").innerHTML = html;
+    newId = null;
+  }
+
+  // ---- form ----
+  let editId = null, prio = 1;
+  function renderForm() {
+    $("fCourses").innerHTML = courses().slice(0, 8).map(c => `<button type="button" class="chip" data-set-course="${esc(c)}" aria-pressed="${$("fCourse").value.trim().toLowerCase() === c.toLowerCase()}">${esc(c)}</button>`).join("");
+    $("fCourses").hidden = courses().length === 0;
+    $("fQuick").innerHTML = [["Today", 0], ["Tomorrow", 1], ["In a week", 7], ["No date", null]].map(([l, n]) => {
+      const v = n === null ? "" : addDays(n);
+      return `<button type="button" class="chip" data-set-due="${v}" aria-pressed="${$("fDue").value === v}">${l}</button>`;
+    }).join("");
+    $("fPrio").innerHTML = PRIO.map(([l, t], i) => `<button type="button" class="chip t-tone ${t}" data-set-prio="${i}" aria-pressed="${prio === i}">${l}</button>`).join("");
+  }
+  function openForm(a) {
+    editId = a ? a.id : null;
+    $("formTitle").textContent = a ? "Edit assignment" : "New assignment";
+    $("saveBtn").textContent = a ? "Save changes" : "Add assignment";
+    $("deleteBtn").hidden = !a;
+    $("fTitle").value = a ? a.title : "";
+    $("fCourse").value = a ? a.course || "" : view.course;
+    $("fDue").value = a ? a.due || "" : "";
+    $("fNotes").value = a ? a.notes || "" : "";
+    prio = a ? a.priority : 1;
+    $("fError").hidden = true; $("fTitle").classList.remove("invalid");
+    renderForm();
+    $("scrim").hidden = false; $("fab").hidden = true;
+    if (!a) $("fTitle").focus();
+  }
+  function closeForm() { $("scrim").hidden = true; $("fab").hidden = false; }
+  function submit() {
+    const title = $("fTitle").value.trim();
+    if (!title) { $("fError").hidden = false; $("fTitle").classList.add("invalid"); $("fTitle").focus(); return; }
+    const fields = { title, course: $("fCourse").value.trim(), due: $("fDue").value, priority: prio, notes: $("fNotes").value.trim() };
+    let a = items.find(x => x.id === editId);
+    if (a) Object.assign(a, fields);
+    else { a = Object.assign({ id: uid(), done: false, created: Date.now() }, fields); items.push(a); newId = a.id; }
+    persist(a); closeForm(); render();
+  }
+  function remove(id) {
+    const i = items.findIndex(x => x.id === id);
+    if (i < 0) return;
+    lastRemoved = { a: items[i], i };
+    items.splice(i, 1);
+    persist(lastRemoved.a, true); render();
+    $("toastText").textContent = `Deleted “${lastRemoved.a.title}”`;
+    $("toast").hidden = false;
+    clearTimeout(remove.timer); remove.timer = setTimeout(() => { $("toast").hidden = true; }, 6000);
+  }
+
+  // ---- events ----
+  $("tiles").addEventListener("click", e => { const b = e.target.closest("[data-filter]"); if (!b) return; view.filter = view.filter === b.dataset.filter ? "all" : b.dataset.filter; saveView(); render(); });
+  $("courses").addEventListener("click", e => { const b = e.target.closest("[data-course]"); if (!b) return; view.course = b.dataset.course; render(); });
+  $("search").addEventListener("input", e => { view.search = e.target.value; render(); });
+  $("sortBtn").addEventListener("click", () => { const k = Object.keys(SORTS); view.sort = k[(k.indexOf(view.sort) + 1) % k.length]; saveView(); render(); });
+  $("fab").addEventListener("click", () => openForm(null));
+  $("list").addEventListener("click", e => {
+    const b = e.target.closest("[data-act]"); if (!b) return;
+    const act = b.dataset.act, card = b.closest(".card"), a = card && items.find(x => x.id === card.dataset.id);
+    if (act === "new") openForm(null);
+    else if (act === "reset") { view.filter = "all"; view.course = ""; view.search = ""; $("search").value = ""; saveView(); render(); }
+    else if (!a) return;
+    else if (act === "toggle") { a.done = !a.done; persist(a); render(); }
+    else if (act === "edit") openForm(a);
+    else if (act === "delete") remove(a.id);
+  });
+  $("form").addEventListener("submit", e => { e.preventDefault(); submit(); });
+  $("form").addEventListener("click", e => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.setCourse !== undefined) $("fCourse").value = b.dataset.setCourse;
+    else if (b.dataset.setDue !== undefined) $("fDue").value = b.dataset.setDue;
+    else if (b.dataset.setPrio !== undefined) prio = Number(b.dataset.setPrio);
+    else return;
+    renderForm();
+  });
+  $("fDue").addEventListener("input", renderForm);
+  $("fCourse").addEventListener("input", renderForm);
+  $("fTitle").addEventListener("input", () => { $("fError").hidden = true; $("fTitle").classList.remove("invalid"); });
+  $("closeBtn").addEventListener("click", closeForm);
+  $("cancelBtn").addEventListener("click", closeForm);
+  $("deleteBtn").addEventListener("click", () => { const id = editId; closeForm(); remove(id); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("scrim").hidden) closeForm(); });
+  $("undoBtn").addEventListener("click", () => {
+    if (!lastRemoved) return;
+    items.splice(Math.min(lastRemoved.i, items.length), 0, lastRemoved.a);
+    persist(lastRemoved.a); lastRemoved = null; $("toast").hidden = true; render();
+  });
+  // Relative labels ("Due tomorrow") go stale at midnight.
+  let day = iso(today());
+  setInterval(() => { if (iso(today()) !== day) { day = iso(today()); render(); } }, 60000);
+
+  render();
+  load();
+})();
+</script>

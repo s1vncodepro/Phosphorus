@@ -54,6 +54,14 @@ Assignments are stored in `assignments.json` in the per-user app data folder:
 
 Set the `PHOSPHORUS_DATA_DIR` environment variable to use a different folder.
 
+## Phone version
+
+`web/app.html` is a web version of the same app for phones, where a C++ desktop
+build cannot be installed. It has the same features and look in a single
+column, and is published as a Claude artifact, which wraps it in a page and
+gives it a private per-person store. Opened anywhere else it saves to the
+browser's local storage instead.
+
 ## Layout
 
 | Path                     | What                                                    |
@@ -62,4 +70,5 @@ Set the `PHOSPHORUS_DATA_DIR` environment variable to use a different folder.
 | `src/assignmentfilter.*` | Filtering, searching and sorting for the list           |
 | `src/main.cpp`           | Start-up; hands the model to the UI                     |
 | `qml/`                   | The interface (`Main.qml` is the window, `Theme.qml` the colours) |
+| `web/app.html`           | The phone (web) version                                 |
 | `tests/`                 | Unit tests for the model and filter                     |
