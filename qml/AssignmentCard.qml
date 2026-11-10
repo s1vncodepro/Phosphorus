@@ -21,11 +21,33 @@ Rectangle {
 
     readonly property color statusTone: Theme.statusColor(status)
 
-    implicitHeight: content.implicitHeight + 28
-    radius: Theme.radius
-    color: hover.hovered ? Theme.surfaceAlt : Theme.surface
+    implicitHeight: content.implicitHeight + 30
+    radius: 16
+    color: hover.hovered ? Theme.tintOn(Theme.surface, Theme.surfaceAlt, 0.6) : Theme.surface
     border.width: 1
-    border.color: hover.hovered ? Theme.tint(Theme.accent, 0.45) : Theme.border
+    border.color: hover.hovered ? Theme.tint(statusTone, 0.5) : Theme.border
+
+    // Soft drop shadow, drawn behind the card
+    Rectangle {
+        z: -1
+        anchors.fill: parent
+        anchors.topMargin: 3
+        anchors.bottomMargin: -3
+        radius: parent.radius
+        color: Theme.shadow
+    }
+
+    // Status strip
+    Rectangle {
+        anchors.left: parent.left
+        anchors.verticalCenter: parent.verticalCenter
+        width: 4
+        height: parent.height - 28
+        radius: 2
+        color: card.statusTone
+        opacity: card.done ? 0.45 : 1
+        Behavior on color { ColorAnimation { duration: Theme.normal } }
+    }
 
     Behavior on color { ColorAnimation { duration: Theme.fast } }
     Behavior on border.color { ColorAnimation { duration: Theme.fast } }
@@ -43,7 +65,7 @@ Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.verticalCenter: parent.verticalCenter
-        anchors.leftMargin: 14
+        anchors.leftMargin: 18
         anchors.rightMargin: 10
         spacing: 14
 
@@ -112,9 +134,9 @@ Rectangle {
                 // Course pill
                 Rectangle {
                     visible: card.course.length > 0
-                    height: 22
-                    width: Math.min(courseText.implicitWidth + 16, 200)
-                    radius: 6
+                    height: 24
+                    width: Math.min(courseText.implicitWidth + 18, 200)
+                    radius: 12
                     color: Theme.tint(Theme.accent, 0.13)
                     Text {
                         id: courseText
@@ -130,9 +152,9 @@ Rectangle {
 
                 // Due pill
                 Rectangle {
-                    height: 22
-                    width: dueRow.implicitWidth + 16
-                    radius: 6
+                    height: 24
+                    width: dueRow.implicitWidth + 18
+                    radius: 12
                     color: Theme.tint(card.statusTone, 0.13)
                     Row {
                         id: dueRow
@@ -156,7 +178,7 @@ Rectangle {
 
                 // Priority
                 Row {
-                    height: 22
+                    height: 24
                     spacing: 6
                     visible: !card.done
                     Rectangle {

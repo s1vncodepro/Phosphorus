@@ -54,6 +54,16 @@ ApplicationWindow {
         onRemoveRequested: uid => window.removeAssignment(uid)
     }
 
+    // Soft accent glow behind the header
+    Rectangle {
+        width: parent.width
+        height: 320
+        gradient: Gradient {
+            GradientStop { position: 0; color: Theme.tintOn(Theme.bg, Theme.accent, Theme.dark ? 0.09 : 0.1) }
+            GradientStop { position: 1; color: Theme.bg }
+        }
+    }
+
     RowLayout {
         anchors.fill: parent
         spacing: 0
@@ -116,34 +126,34 @@ ApplicationWindow {
             GridLayout {
                 Layout.fillWidth: true
                 columns: window.width < 620 ? 2 : 4
-                columnSpacing: 12
-                rowSpacing: 12
+                columnSpacing: 14
+                rowSpacing: 14
 
                 StatCard {
                     Layout.fillWidth: true
                     Layout.preferredWidth: 1   // equal-width columns
-                    label: qsTr("To do"); value: store.activeCount; tone: Theme.accent
+                    label: qsTr("To do"); iconName: "circle"; value: store.activeCount; tone: Theme.accent
                     active: assignments.statusFilter === "active"
                     onClicked: window.toggleFilter("active")
                 }
                 StatCard {
                     Layout.fillWidth: true
                     Layout.preferredWidth: 1   // equal-width columns
-                    label: qsTr("Due this week"); value: store.weekCount; tone: Theme.info
+                    label: qsTr("Due this week"); iconName: "clock"; value: store.weekCount; tone: Theme.info
                     active: assignments.statusFilter === "week"
                     onClicked: window.toggleFilter("week")
                 }
                 StatCard {
                     Layout.fillWidth: true
                     Layout.preferredWidth: 1   // equal-width columns
-                    label: qsTr("Overdue"); value: store.overdueCount; tone: Theme.danger
+                    label: qsTr("Overdue"); iconName: "alert"; value: store.overdueCount; tone: Theme.danger
                     active: assignments.statusFilter === "overdue"
                     onClicked: window.toggleFilter("overdue")
                 }
                 StatCard {
                     Layout.fillWidth: true
                     Layout.preferredWidth: 1   // equal-width columns
-                    label: qsTr("Completed"); value: store.doneCount; tone: Theme.textFaint
+                    label: qsTr("Completed"); iconName: "done"; value: store.doneCount; tone: Theme.textFaint
                     active: assignments.statusFilter === "done"
                     onClicked: window.toggleFilter("done")
                 }
@@ -250,9 +260,40 @@ ApplicationWindow {
                     model: assignments
                     spacing: 10
                     clip: true
-                    bottomMargin: 24
+                    bottomMargin: 28
                     boundsBehavior: Flickable.StopAtBounds
                     ScrollBar.vertical: ScrollBar { }
+
+                    // Group by urgency while sorted by due date (the only order
+                    // in which each group is one contiguous run).
+                    section.property: assignments.sortMode === "due" ? "status" : ""
+                    section.delegate: Item {
+                        id: header
+                        required property string section
+                        width: list.width
+                        height: 34
+
+                        Row {
+                            anchors.left: parent.left
+                            anchors.leftMargin: 4
+                            anchors.bottom: parent.bottom
+                            anchors.bottomMargin: 8
+                            spacing: 8
+
+                            Rectangle {
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: 8; height: 8; radius: 4
+                                color: Theme.statusColor(header.section)
+                            }
+                            Text {
+                                text: Theme.sectionName(header.section).toUpperCase()
+                                color: Theme.textMuted
+                                font.pixelSize: 12
+                                font.weight: Font.Bold
+                                font.letterSpacing: 0.8
+                            }
+                        }
+                    }
 
                     delegate: AssignmentCard {
                         width: list.width

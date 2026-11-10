@@ -8,11 +8,11 @@ Rectangle {
     Behavior on color { ColorAnimation { duration: Theme.normal } }
 
     readonly property var filters: [
-        { key: "all", label: qsTr("All assignments"), count: store.total, tone: Theme.textMuted },
-        { key: "active", label: qsTr("To do"), count: store.activeCount, tone: Theme.accent },
-        { key: "week", label: qsTr("Due this week"), count: store.weekCount, tone: Theme.info },
-        { key: "overdue", label: qsTr("Overdue"), count: store.overdueCount, tone: Theme.danger },
-        { key: "done", label: qsTr("Completed"), count: store.doneCount, tone: Theme.textFaint }
+        { key: "all", icon: "list", label: qsTr("All assignments"), count: store.total, tone: Theme.textMuted },
+        { key: "active", icon: "circle", label: qsTr("To do"), count: store.activeCount, tone: Theme.accent },
+        { key: "week", icon: "clock", label: qsTr("Due this week"), count: store.weekCount, tone: Theme.info },
+        { key: "overdue", icon: "alert", label: qsTr("Overdue"), count: store.overdueCount, tone: Theme.danger },
+        { key: "done", icon: "done", label: qsTr("Completed"), count: store.doneCount, tone: Theme.textFaint }
     ]
 
     Rectangle {
@@ -54,25 +54,26 @@ Rectangle {
                 readonly property bool active: assignments.statusFilter === modelData.key
 
                 Layout.fillWidth: true
-                height: 40
-                radius: 10
+                height: 42
+                radius: 12
                 color: active ? Theme.tint(Theme.accent, 0.14) : hover.containsMouse ? Theme.surfaceAlt : "transparent"
                 Behavior on color { ColorAnimation { duration: Theme.fast } }
 
                 Accessible.role: Accessible.Button
                 Accessible.name: modelData.label
 
-                Rectangle {
+                Icon {
                     id: dot
                     anchors.left: parent.left
                     anchors.leftMargin: 12
                     anchors.verticalCenter: parent.verticalCenter
-                    width: 8; height: 8; radius: 4
-                    color: item.modelData.tone
+                    size: 17
+                    name: item.modelData.icon
+                    color: item.active ? Theme.accent : item.modelData.tone
                 }
                 Text {
                     anchors.left: dot.right
-                    anchors.leftMargin: 12
+                    anchors.leftMargin: 11
                     anchors.right: count.left
                     anchors.rightMargin: 8
                     anchors.verticalCenter: parent.verticalCenter
@@ -107,21 +108,63 @@ Rectangle {
 
         // Overall progress
         Rectangle {
+            id: progress
             Layout.fillWidth: true
-            implicitHeight: progressColumn.implicitHeight + 28
-            radius: Theme.radius
+            implicitHeight: 84
+            radius: 16
             color: Theme.surfaceAlt
             visible: store.total > 0
 
-            readonly property real fraction: store.total > 0 ? store.doneCount / store.total : 0
+            property real fraction: store.total > 0 ? store.doneCount / store.total : 0
+            Behavior on fraction { NumberAnimation { duration: 500; easing.type: Easing.OutCubic } }
+            onFractionChanged: ring.requestPaint()
+
+            Canvas {
+                id: ring
+                anchors.left: parent.left
+                anchors.leftMargin: 14
+                anchors.verticalCenter: parent.verticalCenter
+                width: 56; height: 56
+                antialiasing: true
+
+                property color track: Theme.border
+                property color fill: Theme.accent
+                onTrackChanged: requestPaint()
+                onFillChanged: requestPaint()
+
+                onPaint: {
+                    const ctx = getContext("2d")
+                    ctx.reset()
+                    ctx.lineWidth = 6
+                    ctx.lineCap = "round"
+                    ctx.strokeStyle = track
+                    ctx.beginPath()
+                    ctx.arc(28, 28, 23, 0, 2 * Math.PI)
+                    ctx.stroke()
+                    if (progress.fraction > 0.001) {
+                        ctx.strokeStyle = fill
+                        ctx.beginPath()
+                        ctx.arc(28, 28, 23, -Math.PI / 2, -Math.PI / 2 + 2 * Math.PI * progress.fraction)
+                        ctx.stroke()
+                    }
+                }
+
+                Text {
+                    anchors.centerIn: parent
+                    text: Math.round(progress.fraction * 100) + "%"
+                    color: Theme.text
+                    font.pixelSize: 13
+                    font.weight: Font.Bold
+                }
+            }
 
             Column {
-                id: progressColumn
-                anchors.left: parent.left
+                anchors.left: ring.right
+                anchors.leftMargin: 14
                 anchors.right: parent.right
-                anchors.top: parent.top
-                anchors.margins: 14
-                spacing: 10
+                anchors.rightMargin: 12
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 3
 
                 Text {
                     text: qsTr("Progress")
@@ -130,22 +173,12 @@ Rectangle {
                     font.weight: Font.DemiBold
                 }
                 Text {
+                    width: parent.width
                     text: qsTr("%1 of %2 done").arg(store.doneCount).arg(store.total)
                     color: Theme.text
                     font.pixelSize: 15
                     font.weight: Font.DemiBold
-                }
-                Rectangle {
-                    width: parent.width
-                    height: 6; radius: 3
-                    color: Theme.border
-
-                    Rectangle {
-                        height: parent.height; radius: 3
-                        color: Theme.accent
-                        width: parent.width * parent.parent.parent.fraction
-                        Behavior on width { NumberAnimation { duration: 400; easing.type: Easing.OutCubic } }
-                    }
+                    elide: Text.ElideRight
                 }
             }
         }

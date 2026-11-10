@@ -1,10 +1,11 @@
 import QtQuick
 
 // A clickable summary tile; clicking it filters the list.
-Rectangle {
+Item {
     id: card
 
     property string label
+    property string iconName
     property int value: 0
     property color tone: Theme.accent
     property bool active: false
@@ -14,42 +15,59 @@ Rectangle {
     property real shown: value
     Behavior on shown { NumberAnimation { duration: 350; easing.type: Easing.OutCubic } }
 
-    implicitHeight: 84
-    radius: Theme.radius
-    color: active ? Theme.tint(tone, Theme.dark ? 0.14 : 0.1) : hover.containsMouse ? Theme.surfaceAlt : Theme.surface
-    border.width: 1
-    border.color: active ? Theme.tint(tone, 0.7) : Theme.border
-
-    Behavior on color { ColorAnimation { duration: Theme.fast } }
-    Behavior on border.color { ColorAnimation { duration: Theme.fast } }
+    implicitHeight: 92
 
     Accessible.role: Accessible.Button
     Accessible.name: label + ": " + value
 
-    Column {
-        anchors.fill: parent
-        anchors.margins: 16
-        spacing: 6
+    // Soft drop shadow
+    Rectangle {
+        anchors.fill: face
+        anchors.topMargin: hover.containsMouse ? 5 : 3
+        anchors.bottomMargin: hover.containsMouse ? -5 : -3
+        radius: face.radius
+        color: Theme.shadow
+        Behavior on anchors.topMargin { NumberAnimation { duration: Theme.fast } }
+        Behavior on anchors.bottomMargin { NumberAnimation { duration: Theme.fast } }
+    }
 
-        Row {
-            spacing: 8
-            Rectangle {
-                anchors.verticalCenter: parent.verticalCenter
-                width: 8; height: 8; radius: 4
-                color: card.tone
-            }
-            Text {
-                text: card.label
-                color: Theme.textMuted
-                font.pixelSize: 13
-                font.weight: Font.Medium
-            }
+    Rectangle {
+        id: face
+        anchors.fill: parent
+        radius: 16
+        border.width: 1
+        border.color: card.active ? Theme.tint(card.tone, 0.75) : Theme.border
+        gradient: Gradient {
+            GradientStop { position: 0; color: card.active ? Theme.tintOn(Theme.surface, card.tone, 0.2) : Theme.surface }
+            GradientStop { position: 1; color: Theme.tintOn(Theme.surface, card.tone, card.active ? 0.1 : hover.containsMouse ? 0.08 : 0.03) }
+        }
+        transform: Translate { y: hover.containsMouse ? -1 : 0 }
+
+        Behavior on border.color { ColorAnimation { duration: Theme.fast } }
+
+        Text {
+            x: 16; y: 14
+            text: card.label
+            color: Theme.textMuted
+            font.pixelSize: 13
+            font.weight: Font.Medium
         }
         Text {
+            x: 16
+            anchors.bottom: parent.bottom
+            anchors.bottomMargin: 12
             text: Math.round(card.shown)
             color: Theme.text
-            font.pixelSize: 28
+            font.pixelSize: 30
             font.weight: Font.Bold
+        }
+        Rectangle {
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.margins: 12
+            width: 34; height: 34; radius: 11
+            color: Theme.tint(card.tone, card.active ? 0.28 : 0.15)
+            Icon { anchors.centerIn: parent; name: card.iconName; color: card.tone }
         }
     }
 

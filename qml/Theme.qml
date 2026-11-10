@@ -24,8 +24,28 @@ QtObject {
     readonly property int fast: 140
     readonly property int normal: 220
 
+    readonly property color shadow: dark ? Qt.rgba(0, 0, 0, 0.35) : Qt.rgba(0.1, 0.13, 0.2, 0.05)
+
+    function sectionName(status) {
+        switch (status) {
+        case "overdue": return qsTr("Overdue")
+        case "today": return qsTr("Today")
+        case "soon": return qsTr("Next 7 days")
+        case "later": return qsTr("Later")
+        case "done": return qsTr("Completed")
+        default: return qsTr("No due date")
+        }
+    }
+
     function tint(c, alpha) {
         return Qt.rgba(c.r, c.g, c.b, alpha)
+    }
+
+    // Opaque mix of `overlay` onto `base` (gradient stops cannot stack translucency).
+    function tintOn(base, overlay, amount) {
+        return Qt.rgba(base.r + (overlay.r - base.r) * amount,
+                       base.g + (overlay.g - base.g) * amount,
+                       base.b + (overlay.b - base.b) * amount, 1)
     }
 
     function statusColor(status) {
